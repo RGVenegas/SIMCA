@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Historial</title>
+  <link rel="stylesheet" href="/css/simca.css">
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA</span>
+  <div>
+    <a href="/habitante/estado.html">Estado</a>
+    <a href="/habitante/historial.html" class="active">Historial</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+    <h1>HISTORIAL DE ALERTAS</h1>
+    <select id="sectorSelect" onchange="cambiarSector(this.value)"></select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Nivel</th>
+          <th>Mensaje</th>
+          <th>Valor</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="alertasTable">
+        <tr><td colspan="6" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  let sector = params.get("sector") || "VN-CENTRO";
+
+  function cambiarSector(s) {
+    sector = s;
+    history.replaceState(null, "", `?sector=${s}`);
+    cargar();
+  }
+
+  async function cargar() {
+    const alertas = await fetchJSON(`/habitante/historial?sector=${sector}`);
+    const tbody = document.getElementById("alertasTable");
+    if (!alertas.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center">Sin alertas registradas</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = alertas.map(a => `
+      <tr>
+        <td class="timestamp">${formatDate(a.created_at)}</td>
+        <td>${a.type}</td>
+        <td><span class="${badgeClass(a.level)}">${a.level}</span></td>
+        <td>${a.message}</td>
+        <td>${a.trigger_value.toFixed(2)}</td>
+        <td><span class="${a.is_active ? 'badge badge-critical' : 'badge badge-safe'}">${a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  async function init() {
+    await populateSectorSelect("sectorSelect", sector);
+    await cargar();
+  }
+
+  init();
+</script>
+</body>
+</html>
