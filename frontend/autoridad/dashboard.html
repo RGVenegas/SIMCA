@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Dashboard</title>
+  <link rel="stylesheet" href="/css/simca.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA · AUTORIDAD</span>
+  <div>
+    <a href="/autoridad/dashboard.html" class="active">Dashboard</a>
+    <a href="/autoridad/sensores.html">Sensores</a>
+    <a href="/autoridad/alertas.html">Alertas</a>
+    <a href="/autoridad/reportes.html">Reportes</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+    <h1>DASHBOARD</h1>
+    <span class="timestamp" id="lastUpdate">—</span>
+  </div>
+
+  <div class="grid grid-4" style="margin-bottom:1.5rem" id="metricas"></div>
+
+  <div class="grid grid-2" style="margin-bottom:1.5rem">
+    <div class="card">
+      <h2>pH ÚLTIMAS 12H — VIÑA CENTRO</h2>
+      <canvas id="chartPh" height="120"></canvas>
+    </div>
+    <div class="card">
+      <h2>TURBIDEZ ÚLTIMAS 12H — VIÑA CENTRO</h2>
+      <canvas id="chartTurb" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>MAPA DE SECTORES</h2>
+    <div id="map"></div>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  let map, chartPh, chartTurb;
+  const CHART_OPTS = (label, color) => ({
+    type: "line",
+    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + "22", tension: 0.3, pointRadius: 3 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#e0e8ff" } } },
+      scales: {
+        x: { ticks: { color: "#7a8fab" }, grid: { color: "#1e3a5f" } },
+        y: { ticks: { color: "#7a8fab" }, grid: { color: "#1e3a5f" } },
+      },
+    },
+  });
+
+  function renderMetricas(d) {
+    document.getElementById("metricas").innerHTML = [
+      { label: "pH PROMEDIO",    value: d.ph_promedio },
+      { label: "NODOS ACTIVOS",  value: `${d.nodos_activos}/${d.total_nodos}` },
+      { label: "ALERTAS HOY",    value: d.alertas_hoy },
+      { label: "ALERTAS CRÍTICAS", value: d.alertas_criticas },
+    ].map(m => `
+      <div class="card ${m.label === 'ALERTAS CRÍTICAS' && m.value > 0 ? 'card-red' : 'card-cyan'}">
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value">${m.value}</div>
+      </div>
+    `).join("");
+  }
+
+  async function cargarGraficos() {
+    const g = await fetchJSON("/graficos/VN-CENTRO");
+    if (chartPh) { chartPh.data.labels = g.labels; chartPh.data.datasets[0].data = g.ph; chartPh.update(); }
+    if (chartTurb) { chartTurb.data.labels = g.labels; chartTurb.data.datasets[0].data = g.turbidity; chartTurb.update(); }
+  }
+
+  async function cargarMapa(nodes) {
+    if (!map) {
+      map = initDarkMap("map", -33.025, -71.540, 13);
+    }
+    const sectorStatus = {};
+    for (const n of nodes) {
+      if (!sectorStatus[n.sector_id] || n.status === "WARNING") {
+        sectorStatus[n.sector_id] = n.status;
+      }
+    }
+    map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+    for (const [sid, coords] of Object.entries(SECTOR_COORDS)) {
+      const st = sectorStatus[sid] || "OFFLINE";
+      const node = nodes.find(n => n.sector_id === sid);
+      L.marker([coords.lat, coords.lng], { icon: createColoredMarker(markerColor(st)) })
+        .addTo(map)
+        .bindPopup(`
+          <b style="color:#00f5ff">${coords.name}</b><br>
+          pH: ${node ? formatPh(node.ph) : "—"}<br>
+          Turbidez: ${node?.turbidity?.toFixed(2) ?? "—"} NTU<br>
+          Estado: <b>${st}</b>
+        `);
+    }
+  }
+
+  async function cargar() {
+    const d = await fetchJSON("/autoridad/dashboard");
+    renderMetricas(d);
+    await cargarGraficos();
+    await cargarMapa(d.nodes);
+    document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("es-CL");
+  }
+
+  async function init() {
+    chartPh   = new Chart(document.getElementById("chartPh"),   CHART_OPTS("pH", "#00f5ff"));
+    chartTurb = new Chart(document.getElementById("chartTurb"), CHART_OPTS("NTU", "#ff006e"));
+    await cargar();
+    setInterval(cargar, 15000);
+  }
+
+  init();
+</script>
+</body>
+</html>
