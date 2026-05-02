@@ -1,2 +1,54 @@
 <!DOCTYPE html>
-<html><body><h1>SIMCA</h1></body></html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Sistema de Monitoreo de Calidad de Agua</title>
+  <link rel="stylesheet" href="/css/simca.css">
+  <style>
+    .hero {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; text-align: center; gap: 1rem;
+    }
+    .hero h1 { font-size: 3rem; letter-spacing: 6px; }
+    .hero p { color: var(--muted); letter-spacing: 2px; margin-bottom: 2rem; }
+    .role-cards { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .role-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 2.5rem 3rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      min-width: 220px;
+    }
+    .role-card:hover { border-color: var(--cyan); box-shadow: 0 0 30px rgba(0,245,255,0.15); transform: translateY(-4px); }
+    .role-card .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .role-card h2 { color: var(--cyan); margin-bottom: 0.5rem; font-size: 1rem; letter-spacing: 2px; }
+    .role-card p { color: var(--muted); font-size: 0.8rem; }
+    .version { color: var(--muted); font-size: 0.7rem; letter-spacing: 2px; position: fixed; bottom: 1rem; right: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div>
+      <div style="color:var(--muted);font-size:0.8rem;letter-spacing:4px;margin-bottom:0.5rem">SEREMI — REGIÓN DE VALPARAÍSO</div>
+      <h1>SIMCA</h1>
+      <p>Sistema de Monitoreo y Alerta de Calidad de Agua</p>
+    </div>
+    <div class="role-cards">
+      <div class="role-card" onclick="location.href='/habitante/estado.html'">
+        <div class="icon">&#127968;</div>
+        <h2>HABITANTE</h2>
+        <p>Consulta el estado del agua en tu sector</p>
+      </div>
+      <div class="role-card" onclick="location.href='/autoridad/dashboard.html'">
+        <div class="icon">&#127963;</div>
+        <h2>AUTORIDAD SANITARIA</h2>
+        <p>Dashboard de monitoreo y gestión de alertas</p>
+      </div>
+    </div>
+  </div>
+  <div class="version">SIMCA v3.0 · 2026</div>
+</body>
+</html>
