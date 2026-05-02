@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Alertas</title>
+  <link rel="stylesheet" href="/css/simca.css">
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA · AUTORIDAD</span>
+  <div>
+    <a href="/autoridad/dashboard.html">Dashboard</a>
+    <a href="/autoridad/sensores.html">Sensores</a>
+    <a href="/autoridad/alertas.html" class="active">Alertas</a>
+    <a href="/autoridad/reportes.html">Reportes</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>GESTIÓN DE ALERTAS</h1>
+  </div>
+
+  <div style="margin-bottom:2rem">
+    <h2>ALERTAS ACTIVAS</h2>
+    <div id="activasContainer"></div>
+  </div>
+
+  <div>
+    <h2>HISTORIAL</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Nodo</th><th>Sector</th><th>Tipo</th><th>Nivel</th><th>Mensaje</th><th>SMS</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="historialTable">
+          <tr><td colspan="8" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  async function resolver(id) {
+    await fetch(`${API_BASE}/autoridad/alertas/${id}/resolver`, { method: "POST" });
+    cargar();
+  }
+
+  async function cargar() {
+    const alertas = await fetchJSON("/autoridad/alertas");
+    const activas = alertas.filter(a => a.is_active);
+
+    const cont = document.getElementById("activasContainer");
+    if (!activas.length) {
+      cont.innerHTML = `<div class="card" style="color:var(--safe);text-align:center;padding:2rem">Sin alertas activas</div>`;
+    } else {
+      cont.innerHTML = activas.map(a => `
+        <div class="card ${a.level === 'CRITICAL' ? 'card-red' : 'card-warn'}" style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span class="${badgeClass(a.level)}" style="margin-right:0.5rem">${a.level}</span>
+            <strong>${a.type}</strong> — ${a.message}
+            <div class="timestamp" style="margin-top:0.25rem">Nodo: ${a.node_id} · Sector: ${a.sector_id} · ${formatDate(a.created_at)}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="resolver('${a.id}')">RESOLVER</button>
+        </div>
+      `).join("");
+    }
+
+    const tbody = document.getElementById("historialTable");
+    tbody.innerHTML = alertas.map(a => `
+      <tr>
+        <td class="timestamp">${formatDate(a.created_at)}</td>
+        <td style="color:var(--cyan)">${a.node_id}</td>
+        <td>${a.sector_id}</td>
+        <td>${a.type}</td>
+        <td><span class="${badgeClass(a.level)}">${a.level}</span></td>
+        <td>${a.message}</td>
+        <td>${a.sms_sent}</td>
+        <td><span class="${a.is_active ? 'badge badge-critical' : 'badge badge-safe'}">${a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  cargar();
+  setInterval(cargar, 15000);
+</script>
+</body>
+</html>
