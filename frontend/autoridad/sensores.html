@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Sensores</title>
+  <link rel="stylesheet" href="/css/simca.css">
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA · AUTORIDAD</span>
+  <div>
+    <a href="/autoridad/dashboard.html">Dashboard</a>
+    <a href="/autoridad/sensores.html" class="active">Sensores</a>
+    <a href="/autoridad/alertas.html">Alertas</a>
+    <a href="/autoridad/reportes.html">Reportes</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+    <h1>NODOS IoT</h1>
+    <span class="timestamp" id="lastUpdate">—</span>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Nodo</th>
+          <th>Sector</th>
+          <th>pH</th>
+          <th>Turbidez</th>
+          <th>Batería</th>
+          <th>Último Ping</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="nodosTable">
+        <tr><td colspan="7" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  async function cargar() {
+    const nodes = await fetchJSON("/autoridad/sensores");
+    document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("es-CL");
+    const tbody = document.getElementById("nodosTable");
+    tbody.innerHTML = nodes.map(n => {
+      const bat = n.battery_percent;
+      const batColor = bat < 15 ? "var(--critical)" : bat < 30 ? "var(--warning)" : "var(--safe)";
+      return `
+        <tr>
+          <td style="color:var(--cyan);font-weight:bold">${n.id}</td>
+          <td>${n.sector_id}</td>
+          <td>${formatPh(n.ph)}</td>
+          <td>${n.turbidity != null ? n.turbidity.toFixed(2) + " NTU" : "—"}</td>
+          <td style="color:${batColor}">${bat}%</td>
+          <td class="timestamp">${formatDate(n.last_ping)}</td>
+          <td><span class="${badgeClass(n.status)}">${n.status}</span></td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  cargar();
+  setInterval(cargar, 15000);
+</script>
+</body>
+</html>
