@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Estado del Agua</title>
+  <link rel="stylesheet" href="/css/simca.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA</span>
+  <div>
+    <a href="/habitante/estado.html" class="active">Estado</a>
+    <a href="/habitante/historial.html">Historial</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+    <h1>ESTADO DEL AGUA</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <select id="sectorSelect" onchange="cambiarSector(this.value)"></select>
+      <span class="timestamp" id="lastUpdate">—</span>
+    </div>
+  </div>
+
+  <div id="alertaBanner" style="display:none" class="alert-banner">
+    <strong id="alertaTipo">—</strong> — <span id="alertaMensaje">—</span>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:1.5rem">
+    <div class="card" id="estadoCard">
+      <div class="semaforo">
+        <div class="semaforo-dot dot-unknown" id="semaforoDot"></div>
+        <div style="font-size:1.2rem;letter-spacing:2px" id="estadoLabel">CARGANDO...</div>
+        <div id="sectorNombre" style="color:var(--muted);font-size:0.85rem"></div>
+      </div>
+    </div>
+
+    <div class="grid" style="gap:1rem">
+      <div class="card">
+        <div class="metric-label">pH ACTUAL</div>
+        <div class="metric-value" id="phValor">—</div>
+        <div style="color:var(--muted);font-size:0.75rem;margin-top:0.5rem">Normal: 6.5 – 8.5</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">TURBIDEZ</div>
+        <div class="metric-value" id="turbValor">—</div>
+        <div style="color:var(--muted);font-size:0.75rem;margin-top:0.5rem">Normal: &lt; 3.5 NTU</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>UBICACIÓN DEL SECTOR</h2>
+    <div id="map"></div>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  let sector = params.get("sector") || "VN-CENTRO";
+  let map, marker;
+
+  function cambiarSector(s) {
+    sector = s;
+    history.replaceState(null, "", `?sector=${s}`);
+    cargar();
+  }
+
+  function setSemaforo(status) {
+    const dot = document.getElementById("semaforoDot");
+    const label = document.getElementById("estadoLabel");
+    dot.className = "semaforo-dot";
+    if (status === "SAFE")        { dot.classList.add("dot-safe");     label.textContent = "AGUA POTABLE"; label.style.color = "var(--safe)"; }
+    else if (status === "WARNING"){ dot.classList.add("dot-warning");  label.textContent = "PRECAUCIÓN";   label.style.color = "var(--warning)"; }
+    else if (status === "CONTAMINATED") { dot.classList.add("dot-critical"); label.textContent = "NO CONSUMIR"; label.style.color = "var(--critical)"; }
+    else                          { dot.classList.add("dot-unknown");  label.textContent = "SIN DATOS";    label.style.color = "var(--muted)"; }
+  }
+
+  async function cargar() {
+    const data = await fetchJSON(`/habitante/estado?sector=${sector}`);
+    document.getElementById("sectorNombre").textContent = data.sector_name;
+    document.getElementById("phValor").textContent = formatPh(data.ph);
+    document.getElementById("turbValor").textContent = data.turbidity != null ? data.turbidity.toFixed(2) + " NTU" : "—";
+    document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("es-CL");
+    setSemaforo(data.water_status);
+
+    const banner = document.getElementById("alertaBanner");
+    if (data.has_active_alert && data.active_alert) {
+      banner.style.display = "block";
+      document.getElementById("alertaTipo").textContent = data.active_alert.type;
+      document.getElementById("alertaMensaje").textContent = data.active_alert.message;
+    } else {
+      banner.style.display = "none";
+    }
+
+    const coords = SECTOR_COORDS[sector];
+    if (coords) {
+      if (!map) {
+        map = initDarkMap("map", coords.lat, coords.lng, 14);
+        marker = L.marker([coords.lat, coords.lng], { icon: createColoredMarker(markerColor(data.water_status)) })
+          .addTo(map)
+          .bindPopup(`<b>${data.sector_name}</b><br>pH: ${formatPh(data.ph)}<br>Estado: ${data.water_status}`);
+      } else {
+        map.setView([coords.lat, coords.lng], 14);
+        marker.setLatLng([coords.lat, coords.lng]);
+        marker.setIcon(createColoredMarker(markerColor(data.water_status)));
+        marker.setPopupContent(`<b>${data.sector_name}</b><br>pH: ${formatPh(data.ph)}<br>Estado: ${data.water_status}`);
+      }
+    }
+  }
+
+  async function init() {
+    await populateSectorSelect("sectorSelect", sector);
+    await cargar();
+    setInterval(cargar, 15000);
+  }
+
+  init();
+</script>
+</body>
+</html>
