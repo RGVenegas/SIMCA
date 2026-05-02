@@ -6,49 +6,136 @@
   <title>SIMCA — Sistema de Monitoreo de Calidad de Agua</title>
   <link rel="stylesheet" href="/css/simca.css">
   <style>
-    .hero {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 100vh; text-align: center; gap: 1rem;
+    .index-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 2.5rem;
+      text-align: center;
+      background: radial-gradient(ellipse at 50% 30%, rgba(0,212,170,0.04) 0%, transparent 70%);
     }
-    .hero h1 { font-size: 3rem; letter-spacing: 6px; }
-    .hero p { color: var(--muted); letter-spacing: 2px; margin-bottom: 2rem; }
-    .role-cards { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .index-logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .index-logo .drop {
+      font-size: 2.8rem;
+      filter: drop-shadow(0 0 12px #00d4aa88);
+    }
+    .index-logo h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #00d4aa;
+      letter-spacing: 8px;
+      text-shadow: 0 0 30px rgba(0,212,170,0.5);
+      margin: 0;
+    }
+    .index-subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 4px;
+      color: #4a6080;
+      text-transform: uppercase;
+      line-height: 1.8;
+    }
+    .index-subtitle span {
+      color: #00d4aa;
+    }
+    .role-cards {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
     .role-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
+      background: #0a1628;
+      border: 1px solid #1a3a5c;
       padding: 2.5rem 3rem;
       cursor: pointer;
       transition: all 0.3s;
       text-align: center;
-      min-width: 220px;
+      min-width: 240px;
+      max-width: 280px;
+      position: relative;
+      overflow: hidden;
     }
-    .role-card:hover { border-color: var(--cyan); box-shadow: 0 0 30px rgba(0,245,255,0.15); transform: translateY(-4px); }
-    .role-card .icon { font-size: 3rem; margin-bottom: 1rem; }
-    .role-card h2 { color: var(--cyan); margin-bottom: 0.5rem; font-size: 1rem; letter-spacing: 2px; }
-    .role-card p { color: var(--muted); font-size: 0.8rem; }
-    .version { color: var(--muted); font-size: 0.7rem; letter-spacing: 2px; position: fixed; bottom: 1rem; right: 1rem; }
+    .role-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00d4aa, transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .role-card:hover::before { opacity: 1; }
+    .role-card:hover {
+      border-color: #00d4aa44;
+      box-shadow: 0 0 40px rgba(0,212,170,0.08), inset 0 0 40px rgba(0,212,170,0.02);
+      transform: translateY(-4px);
+    }
+    .role-card .role-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.2rem;
+      display: block;
+    }
+    .role-card h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #ff6b00;
+      margin-bottom: 0.8rem;
+    }
+    .role-card p {
+      font-family: 'Rajdhani', sans-serif;
+      color: #7a8fab;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .index-footer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #2a4060;
+      letter-spacing: 2px;
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
-  <div class="hero">
+  <div class="index-hero">
     <div>
-      <div style="color:var(--muted);font-size:0.8rem;letter-spacing:4px;margin-bottom:0.5rem">SEREMI — REGIÓN DE VALPARAÍSO</div>
-      <h1>SIMCA</h1>
-      <p>Sistema de Monitoreo y Alerta de Calidad de Agua</p>
+      <div class="index-logo">
+        <span class="drop">&#128167;</span>
+        <h1>SIMCA</h1>
+      </div>
+      <div class="index-subtitle">
+        SISTEMA DE MONITOREO Y ALERTA DE CALIDAD DE AGUA<br>
+        <span>Viña del Mar</span> · <span>Región de Valparaíso</span>
+      </div>
     </div>
     <div class="role-cards">
       <div class="role-card" onclick="location.href='/habitante/estado.html'">
-        <div class="icon">&#127968;</div>
+        <span class="role-icon">&#127968;</span>
         <h2>HABITANTE</h2>
-        <p>Consulta el estado del agua en tu sector</p>
+        <p>Consulta el estado del agua en tu sector y recibe alertas cuando haya riesgo.</p>
       </div>
       <div class="role-card" onclick="location.href='/autoridad/dashboard.html'">
-        <div class="icon">&#127963;</div>
+        <span class="role-icon">&#127963;</span>
         <h2>AUTORIDAD SANITARIA</h2>
-        <p>Dashboard de monitoreo y gestión de alertas</p>
+        <p>Monitorea sensores, gestiona alertas y genera reportes para la comunidad.</p>
       </div>
     </div>
   </div>
-  <div class="version">SIMCA v3.0 · 2026</div>
+  <div class="index-footer">SIMCA v1.0 &nbsp;·&nbsp; 2026 &nbsp;·&nbsp; SEREMI Región de Valparaíso</div>
 </body>
 </html>
