@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMCA — Reportes</title>
+  <link rel="stylesheet" href="/css/simca.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<nav>
+  <span class="logo">SIMCA · AUTORIDAD</span>
+  <div>
+    <a href="/autoridad/dashboard.html">Dashboard</a>
+    <a href="/autoridad/sensores.html">Sensores</a>
+    <a href="/autoridad/alertas.html">Alertas</a>
+    <a href="/autoridad/reportes.html" class="active">Reportes</a>
+    <a href="/index.html">← Inicio</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+    <h1>REPORTES</h1>
+    <select id="sectorSelect" onchange="cargarGraficos(this.value)"></select>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:1.5rem">
+    <div class="card">
+      <h2>EVOLUCIÓN DE pH</h2>
+      <canvas id="chartPh" height="140"></canvas>
+    </div>
+    <div class="card">
+      <h2>EVOLUCIÓN DE TURBIDEZ</h2>
+      <canvas id="chartTurb" height="140"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>HISTORIAL COMPLETO DE ALERTAS</h2>
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Sector</th><th>Tipo</th><th>Nivel</th><th>Mensaje</th><th>Resuelto</th></tr>
+      </thead>
+      <tbody id="reporteTable">
+        <tr><td colspan="6" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/simca.js"></script>
+<script>
+  let chartPh, chartTurb;
+
+  const CHART_OPTS = (label, color) => ({
+    type: "line",
+    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + "22", tension: 0.3, fill: true, pointRadius: 2 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#e0e8ff" } } },
+      scales: {
+        x: { ticks: { color: "#7a8fab", maxTicksLimit: 8 }, grid: { color: "#1e3a5f" } },
+        y: { ticks: { color: "#7a8fab" }, grid: { color: "#1e3a5f" } },
+      },
+    },
+  });
+
+  async function cargarGraficos(sector) {
+    const g = await fetchJSON(`/graficos/${sector}`);
+    chartPh.data.labels   = g.labels;  chartPh.data.datasets[0].data   = g.ph;        chartPh.update();
+    chartTurb.data.labels = g.labels;  chartTurb.data.datasets[0].data = g.turbidity; chartTurb.update();
+  }
+
+  async function cargarReporte() {
+    const alertas = await fetchJSON("/autoridad/reportes");
+    const tbody = document.getElementById("reporteTable");
+    if (!alertas.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center">Sin datos</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = alertas.map(a => `
+      <tr>
+        <td class="timestamp">${formatDate(a.created_at)}</td>
+        <td>${a.sector_id}</td>
+        <td>${a.type}</td>
+        <td><span class="${badgeClass(a.level)}">${a.level}</span></td>
+        <td>${a.message}</td>
+        <td class="timestamp">${a.resolved_at ? formatDate(a.resolved_at) : "—"}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function init() {
+    chartPh   = new Chart(document.getElementById("chartPh"),   CHART_OPTS("pH", "#00f5ff"));
+    chartTurb = new Chart(document.getElementById("chartTurb"), CHART_OPTS("Turbidez NTU", "#ff006e"));
+
+    const sectores = await fetchJSON("/sectores");
+    const sel = document.getElementById("sectorSelect");
+    sel.innerHTML = sectores.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+
+    await cargarGraficos("VN-CENTRO");
+    await cargarReporte();
+  }
+
+  init();
+</script>
+</body>
+</html>
