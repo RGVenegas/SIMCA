@@ -42,6 +42,10 @@ Universidad Andrés Bello — Ingeniería de Software
 ```bash
 cd backend
 pip install -r requirements.txt
+
+- si no funciona, usar
+
+python -m pip install -r requirements.txt
 ```
 
 ---
@@ -52,6 +56,10 @@ pip install -r requirements.txt
 ```bash
 cd backend
 uvicorn main:app --reload --port 8000
+
+- si no funciona, usar 
+
+python -m uvicorn main:app --reload --port 8000
 ```
 
 **Terminal 2 — Simulador IoT:**
