@@ -87,11 +87,7 @@ export default function Estado() {
   return (
     <>
       <Navbar rol="habitante" />
-      <div className="tab-nav" style={{ marginTop: 'var(--nav-height)' }}>
-        <a href="/habitante/estado" className="tab-btn active">MI AGUA</a>
-        <a href="/habitante/historial" className="tab-btn">HISTORIAL</a>
-      </div>
-      <div className="container" style={{ paddingTop: '1.5rem', marginTop: 0 }}>
+      <div className="container">
         {data?.has_active_alert && data?.active_alert && (
           <div className="alert-banner" style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

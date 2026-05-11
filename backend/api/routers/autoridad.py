@@ -16,7 +16,7 @@ def get_dashboard(session: Session = Depends(get_session)):
     repo = SQLiteRepository(session)
     nodes = repo.get_all_nodes()
     active_alerts = repo.get_active_alerts()
-    all_alerts = repo.get_all(limit=100)
+    all_alerts = repo.get_all()
 
     online = [n for n in nodes if n.status != NodeStatus.Offline]
     ph_vals = [n.ph for n in nodes if n.ph is not None]
@@ -57,4 +57,4 @@ def resolver_alerta(alert_id: str, session: Session = Depends(get_session)):
 @router.get("/autoridad/reportes", response_model=List[AlertResponse])
 def get_reportes(session: Session = Depends(get_session)):
     repo = SQLiteRepository(session)
-    return [AlertResponse(**a.model_dump()) for a in repo.get_all(limit=200)]
+    return [AlertResponse(**a.model_dump()) for a in repo.get_all()]

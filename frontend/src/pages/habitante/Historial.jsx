@@ -32,11 +32,7 @@ export default function Historial() {
   return (
     <>
       <Navbar rol="habitante" />
-      <div className="tab-nav" style={{ marginTop: 'var(--nav-height)' }}>
-        <a href="/habitante/estado" className="tab-btn">MI AGUA</a>
-        <a href="/habitante/historial" className="tab-btn active">HISTORIAL</a>
-      </div>
-      <div className="container" style={{ paddingTop: '1.5rem', marginTop: 0 }}>
+      <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div className="metric-label" style={{ fontSize: '0.65rem', letterSpacing: '3px' }}>HISTORIAL DE ALERTAS — VIÑA DEL MAR</div>
           <div className="sector-tabs">
