@@ -1397,3 +1397,20 @@ footer,
 
   .metric-value { font-size: 1.6rem; }
 }
+
+/* Index page */
+.index-hero { display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:2.5rem;text-align:center;background:radial-gradient(ellipse at 50% 30%,rgba(0,212,170,.04) 0%,transparent 70%) }
+.index-logo { display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:.5rem }
+.index-logo .drop { font-size:2.8rem;filter:drop-shadow(0 0 12px #00d4aa88) }
+.index-logo h1 { font-family:'Orbitron',monospace;font-size:3rem;font-weight:900;color:#00d4aa;letter-spacing:8px;text-shadow:0 0 30px rgba(0,212,170,.5);margin:0 }
+.index-subtitle { font-family:'Rajdhani',sans-serif;font-size:.85rem;letter-spacing:4px;color:#4a6080;text-transform:uppercase;line-height:1.8 }
+.index-subtitle span { color:#00d4aa }
+.role-cards { display:flex;gap:2rem;flex-wrap:wrap;justify-content:center }
+.role-card { background:#0a1628;border:1px solid #1a3a5c;padding:2.5rem 3rem;cursor:pointer;transition:all .3s;text-align:center;min-width:240px;max-width:280px;position:relative;overflow:hidden }
+.role-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00d4aa,transparent);opacity:0;transition:opacity .3s }
+.role-card:hover::before { opacity:1 }
+.role-card:hover { border-color:#00d4aa44;box-shadow:0 0 40px rgba(0,212,170,.08),inset 0 0 40px rgba(0,212,170,.02);transform:translateY(-4px) }
+.role-card .role-icon { font-size:3.5rem;margin-bottom:1.2rem;display:block }
+.role-card h2 { font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;letter-spacing:3px;color:#ff6b00;margin-bottom:.8rem }
+.role-card p { font-family:'Rajdhani',sans-serif;color:#7a8fab;font-size:.95rem;line-height:1.6 }
+.index-footer { font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#2a4060;letter-spacing:2px;position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);white-space:nowrap }
