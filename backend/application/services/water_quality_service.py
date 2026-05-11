@@ -35,7 +35,10 @@ class WaterQualityService:
             node.status = NodeStatus.Online if reading.status == WaterStatus.Safe else NodeStatus.Warning
             self._sensor_repo.update_node(node)
 
-        if reading.status == WaterStatus.Contaminated:
+        if reading.status == WaterStatus.Safe:
+            # Sensor volvió a la normalidad — resolver alertas activas de este nodo
+            self._alert_repo.resolve_all_for_node(reading.node_id)
+        elif reading.status == WaterStatus.Contaminated:
             self._handle_critical_alert(reading)
         elif reading.status == WaterStatus.Warning:
             self._handle_warning_alert(reading)
@@ -49,6 +52,8 @@ class WaterQualityService:
         return WaterStatus.Safe
 
     def _handle_critical_alert(self, reading: SensorReading) -> None:
+        # Resolver alerta previa del nodo antes de crear una nueva (máx 1 activa por nodo)
+        self._alert_repo.resolve_all_for_node(reading.node_id)
         ph_issue = reading.ph < PH_MIN or reading.ph > PH_MAX
         if reading.ph < PH_MIN:
             msg = f"pH {reading.ph:.1f} bajo (mín 6.5). No consumas el agua."
@@ -70,6 +75,7 @@ class WaterQualityService:
         ))
 
     def _handle_warning_alert(self, reading: SensorReading) -> None:
+        self._alert_repo.resolve_all_for_node(reading.node_id)
         msg = f"Turbidez elevada {reading.turbidity:.1f} NTU. Precaución."
         self._alert_repo.save_alert(Alert(
             node_id=reading.node_id,

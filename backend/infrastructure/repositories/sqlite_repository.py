@@ -55,15 +55,20 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
             .order_by(Alert.created_at.desc())
         ).all()
 
-    def get_all(self, limit: int = 50) -> List[Alert]:
+    def get_all(self, hours: int = 12) -> List[Alert]:
+        cutoff = datetime.now() - timedelta(hours=hours)
         return self._session.exec(
-            select(Alert).order_by(Alert.created_at.desc()).limit(limit)
+            select(Alert)
+            .where(Alert.created_at >= cutoff)
+            .order_by(Alert.created_at.desc())
         ).all()
 
-    def get_alerts_by_sector(self, sector_id: str) -> List[Alert]:
+    def get_alerts_by_sector(self, sector_id: str, hours: int = 12) -> List[Alert]:
+        cutoff = datetime.now() - timedelta(hours=hours)
         return self._session.exec(
             select(Alert)
             .where(Alert.sector_id == sector_id)
+            .where(Alert.created_at >= cutoff)
             .order_by(Alert.created_at.desc())
         ).all()
 
@@ -73,4 +78,28 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
             alert.is_active = False
             alert.resolved_at = datetime.now()
             self._session.add(alert)
+            self._session.commit()
+
+    def resolve_all_for_node(self, node_id: str) -> None:
+        alerts = self._session.exec(
+            select(Alert)
+            .where(Alert.node_id == node_id)
+            .where(Alert.is_active == True)
+        ).all()
+        now = datetime.now()
+        for alert in alerts:
+            alert.is_active = False
+            alert.resolved_at = now
+            self._session.add(alert)
+        if alerts:
+            self._session.commit()
+
+    def delete_old_alerts(self, hours: int = 12) -> None:
+        cutoff = datetime.now() - timedelta(hours=hours)
+        old = self._session.exec(
+            select(Alert).where(Alert.created_at < cutoff)
+        ).all()
+        for alert in old:
+            self._session.delete(alert)
+        if old:
             self._session.commit()

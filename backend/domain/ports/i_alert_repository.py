@@ -17,3 +17,9 @@ class IAlertRepository(ABC):
 
     @abstractmethod
     def resolve(self, alert_id: str) -> None: ...
+
+    @abstractmethod
+    def resolve_all_for_node(self, node_id: str) -> None: ...
+
+    @abstractmethod
+    def delete_old_alerts(self, hours: int = 12) -> None: ...

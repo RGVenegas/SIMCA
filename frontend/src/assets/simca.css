@@ -1447,6 +1447,11 @@ footer,
 .sector-btn:hover { border-color:var(--cyan);color:var(--cyan) }
 .sector-btn.active { border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,170,.08) }
 
+/* Filter buttons (Sensores) */
+.filter-btn { background:transparent;border:1px solid #1a3a5c;color:#4a6080;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:2px;padding:.35rem .7rem;cursor:pointer;transition:all .2s }
+.filter-btn:hover { border-color:var(--cyan);color:var(--cyan) }
+.filter-btn.active { border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,170,.08) }
+
 /* Alert banner */
 .alert-banner { background:rgba(255,48,48,.08);border:1px solid rgba(255,48,48,.3);border-left:4px solid var(--critical);padding:1rem 1.25rem }
 
