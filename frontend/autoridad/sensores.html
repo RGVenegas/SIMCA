@@ -3,75 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SIMCA — Sensores</title>
+  <title>SIMCA — Nodos IoT</title>
   <link rel="stylesheet" href="/css/simca.css">
+  <style>
+    .bat-bar { display: inline-block; width: 60px; height: 8px; background: #0d2040; vertical-align: middle; border-radius: 2px; overflow: hidden; margin-right: 0.4rem; }
+    .bat-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+    .thresholds { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+    .thresholds th { color: var(--text-muted); font-weight: 400; letter-spacing: 1px; text-transform: uppercase; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .thresholds td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #071525; }
+    .thresholds tr:last-child td { border-bottom: none; }
+    .norma-title { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .filter-row { display: flex; gap: 0.75rem; margin-bottom: 1.2rem; align-items: center; flex-wrap: wrap; }
+    .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 2px; padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.2s; }
+    .filter-btn.active, .filter-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+    .filter-label { font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: var(--text-muted); }
+  </style>
 </head>
 <body>
-<nav>
-  <span class="logo">SIMCA · AUTORIDAD</span>
-  <div>
-    <a href="/autoridad/dashboard.html">Dashboard</a>
-    <a href="/autoridad/sensores.html" class="active">Sensores</a>
-    <a href="/autoridad/alertas.html">Alertas</a>
-    <a href="/autoridad/reportes.html">Reportes</a>
-    <a href="/index.html">← Inicio</a>
+
+<nav class="nav">
+  <div class="nav-left">
+    <a class="nav-logo" href="/index.html">&#128167; SIMCA</a>
+    <div class="nav-tabs">
+      <a href="/autoridad/dashboard.html" class="nav-tab">DASHBOARD</a>
+      <a href="/autoridad/sensores.html" class="nav-tab active">SENSORES</a>
+      <a href="/autoridad/alertas.html" class="nav-tab">ALERTAS</a>
+      <a href="/autoridad/reportes.html" class="nav-tab">REPORTES</a>
+    </div>
+  </div>
+  <div class="nav-status">
+    <span class="nav-live"><span class="live-dot"></span> EN VIVO</span>
+    <span class="nav-time" id="navTime">—</span>
+    <div class="nav-avatar">A</div>
+    <span class="nav-user">Autoridad Sanitaria</span>
+    <span class="nav-role-badge">ADMIN</span>
+    <a href="/index.html" class="btn-salir">← Salir</a>
   </div>
 </nav>
 
 <div class="container">
-  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
-    <h1>NODOS IoT</h1>
-    <span class="timestamp" id="lastUpdate">—</span>
+
+  <!-- Summary KPIs -->
+  <div class="grid grid-4" style="margin-bottom:1.5rem" id="kpis"></div>
+
+  <!-- Nodes table -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem">
+      <div class="norma-title">NODOS IOT — ESTADO EN TIEMPO REAL</div>
+      <div class="filter-row" style="margin-bottom:0">
+        <span class="filter-label">FILTRAR:</span>
+        <button class="filter-btn active" onclick="setFilter('ALL',this)">TODOS</button>
+        <button class="filter-btn" onclick="setFilter('ONLINE',this)">ONLINE</button>
+        <button class="filter-btn" onclick="setFilter('WARNING',this)">WARNING</button>
+        <button class="filter-btn" onclick="setFilter('OFFLINE',this)">OFFLINE</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>NODO ID</th>
+            <th>SECTOR</th>
+            <th>pH</th>
+            <th>TURBIDEZ</th>
+            <th>BATERÍA</th>
+            <th>ÚLTIMO PING</th>
+            <th>ESTADO</th>
+          </tr>
+        </thead>
+        <tbody id="nodosTable">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem">Cargando nodos...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
+  <!-- NCh 409 Thresholds -->
   <div class="card">
-    <table>
+    <div class="norma-title">NORMA NCH 409 — UMBRALES DE CALIDAD DE AGUA POTABLE</div>
+    <table class="thresholds">
       <thead>
         <tr>
-          <th>Nodo</th>
-          <th>Sector</th>
-          <th>pH</th>
-          <th>Turbidez</th>
-          <th>Batería</th>
-          <th>Último Ping</th>
-          <th>Estado</th>
+          <th>Parámetro</th>
+          <th>Estado SAFE</th>
+          <th>Estado WARNING</th>
+          <th>Estado CONTAMINATED</th>
+          <th>Acción</th>
         </tr>
       </thead>
-      <tbody id="nodosTable">
-        <tr><td colspan="7" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+      <tbody>
+        <tr>
+          <td style="color:var(--cyan)">pH</td>
+          <td style="color:var(--safe)">6.5 – 8.5</td>
+          <td style="color:var(--warning)">—</td>
+          <td style="color:var(--critical)">&lt; 6.5 ó &gt; 8.5</td>
+          <td style="color:var(--text-muted)">Alerta CRÍTICA + SMS mock</td>
+        </tr>
+        <tr>
+          <td style="color:var(--cyan)">Turbidez</td>
+          <td style="color:var(--safe)">≤ 3.5 NTU</td>
+          <td style="color:var(--warning)">3.5 – 5.0 NTU</td>
+          <td style="color:var(--critical)">&gt; 5.0 NTU</td>
+          <td style="color:var(--text-muted)">WARNING / Alerta CRÍTICA</td>
+        </tr>
+        <tr>
+          <td style="color:var(--cyan)">Batería</td>
+          <td style="color:var(--safe)">≥ 30%</td>
+          <td style="color:var(--warning)">15 – 29%</td>
+          <td style="color:var(--critical)">&lt; 15%</td>
+          <td style="color:var(--text-muted)">Badge LOW-BAT</td>
+        </tr>
+        <tr>
+          <td style="color:var(--cyan)">Ping</td>
+          <td style="color:var(--safe)">Último &lt; 30 min</td>
+          <td style="color:var(--warning)">30 – 60 min</td>
+          <td style="color:var(--critical)">&gt; 60 min / sin señal</td>
+          <td style="color:var(--text-muted)">Estado OFFLINE</td>
+        </tr>
       </tbody>
     </table>
   </div>
+
 </div>
 
-<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+<footer class="footer">SIMCA v3.0 · SEREMI Región de Valparaíso · 2026 · Todos los derechos reservados</footer>
 
-<script src="/js/config.js"></script>
-<script src="/js/simca.js"></script>
+<script src="/js/config.js?v=4"></script>
+<script src="/js/simca.js?v=4"></script>
 <script>
-  async function cargar() {
-    const nodes = await fetchJSON("/autoridad/sensores");
-    document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("es-CL");
+  let allNodes = [];
+  let activeFilter = "ALL";
+
+  function setFilter(f, btn) {
+    activeFilter = f;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderTable();
+  }
+
+  function renderTable() {
+    const nodes = activeFilter === "ALL" ? allNodes : allNodes.filter(n => n.status === activeFilter);
     const tbody = document.getElementById("nodosTable");
+    if (!nodes.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem">Sin nodos para este filtro</td></tr>`;
+      return;
+    }
     tbody.innerHTML = nodes.map(n => {
-      const bat = n.battery_percent;
+      const bat = n.battery_percent ?? 0;
       const batColor = bat < 15 ? "var(--critical)" : bat < 30 ? "var(--warning)" : "var(--safe)";
+      const phColor  = n.ph == null ? "var(--text-muted)" : (n.ph < 6.5 || n.ph > 8.5) ? "var(--critical)" : "var(--safe)";
+      const turbColor = n.turbidity == null ? "var(--text-muted)" : n.turbidity > 5 ? "var(--critical)" : n.turbidity > 3.5 ? "var(--warning)" : "var(--safe)";
       return `
         <tr>
-          <td style="color:var(--cyan);font-weight:bold">${n.id}</td>
-          <td>${n.sector_id}</td>
-          <td>${formatPh(n.ph)}</td>
-          <td>${n.turbidity != null ? n.turbidity.toFixed(2) + " NTU" : "—"}</td>
-          <td style="color:${batColor}">${bat}%</td>
-          <td class="timestamp">${formatDate(n.last_ping)}</td>
+          <td style="font-family:'Orbitron',monospace;font-size:0.75rem;color:var(--cyan);letter-spacing:1px">${n.id}</td>
+          <td style="font-family:'Rajdhani',sans-serif;color:var(--text)">${n.sector_id}</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:${phColor}">${formatPh(n.ph)}</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:${turbColor}">${n.turbidity != null ? n.turbidity.toFixed(2) + " NTU" : "—"}</td>
+          <td>
+            <span class="bat-bar"><span class="bat-fill" style="width:${bat}%;background:${batColor}"></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:${batColor}">${bat}%</span>
+            ${bat < 15 ? '<span class="badge-low-bat" style="margin-left:0.3rem">LOW-BAT</span>' : ''}
+          </td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-muted)">${formatDate(n.last_ping)}</td>
           <td><span class="${badgeClass(n.status)}">${n.status}</span></td>
         </tr>
       `;
     }).join("");
   }
 
+  function renderKpis(nodes) {
+    const online  = nodes.filter(n => n.status === "ONLINE").length;
+    const warning = nodes.filter(n => n.status === "WARNING").length;
+    const offline = nodes.filter(n => n.status === "OFFLINE").length;
+    const lowbat  = nodes.filter(n => (n.battery_percent ?? 100) < 15).length;
+    const items = [
+      { label: "ONLINE",   value: online,  cls: "card-cyan" },
+      { label: "WARNING",  value: warning, cls: warning > 0 ? "card-warn" : "card" },
+      { label: "OFFLINE",  value: offline, cls: offline > 0 ? "card-alert" : "card" },
+      { label: "BATERÍA BAJA", value: lowbat, cls: lowbat > 0 ? "card-warn" : "card" },
+    ];
+    document.getElementById("kpis").innerHTML = items.map(m => `
+      <div class="${m.cls}" style="text-align:center;padding:1.25rem 1rem">
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value">${m.value}</div>
+      </div>
+    `).join("");
+  }
+
+  async function cargar() {
+    allNodes = await fetchJSON("/autoridad/sensores");
+    renderKpis(allNodes);
+    renderTable();
+    document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
+  }
+
   cargar();
   setInterval(cargar, 15000);
+  setInterval(() => {
+    document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
+  }, 1000);
 </script>
 </body>
 </html>

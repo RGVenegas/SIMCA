@@ -26,6 +26,21 @@
     .sms-input::placeholder { color: #2a4060; }
     .sms-example { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #2a4060; margin-top: 0.4rem; }
     @media(max-width:700px){ .estado-main { grid-template-columns: 1fr; } }
+    .semaforo-dot {
+      width: 130px; height: 130px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; border: 3px solid #4a6080;
+      transition: all 0.3s; flex-shrink: 0;
+    }
+    .semaforo-label {
+      font-family: 'Orbitron', monospace; font-size: 0.9rem;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      margin-top: 0.75rem; text-align: center;
+    }
+    .dot-safe     { border-color: #00d4aa; color: #00d4aa; box-shadow: 0 0 24px rgba(0,212,170,0.35); }
+    .dot-warning  { border-color: #ffaa00; color: #ffaa00; box-shadow: 0 0 24px rgba(255,170,0,0.35); }
+    .dot-critical { border-color: #ff3030; color: #ff3030; box-shadow: 0 0 24px rgba(255,48,48,0.4); }
+    .dot-unknown  { border-color: #4a6080; color: #4a6080; }
   </style>
 </head>
 <body>
@@ -43,12 +58,12 @@
   </div>
 </nav>
 
-<div class="tab-nav">
+<div class="tab-nav" style="margin-top:var(--nav-height)">
   <a href="/habitante/estado.html" class="tab-btn active">MI AGUA</a>
   <a href="/habitante/historial.html" class="tab-btn">HISTORIAL</a>
 </div>
 
-<div class="container" style="padding-top:1.5rem">
+<div class="container" style="padding-top:1.5rem;margin-top:0">
   <div id="alertaBanner" style="display:none" class="alert-banner">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
@@ -61,7 +76,7 @@
 
   <div class="estado-main">
     <div class="estado-left card">
-      <div class="semaforo">
+      <div class="semaforo-wrapper">
         <div id="semaforoDot" class="semaforo-dot dot-unknown">
           <div class="semaforo-inner" id="semaforoIcon">?</div>
         </div>
@@ -69,7 +84,7 @@
         <div id="sectorNombre" style="font-family:'Rajdhani',sans-serif;color:#4a6080;font-size:0.85rem;margin-top:0.3rem"></div>
         <div id="estadoDesc" style="font-family:'Rajdhani',sans-serif;color:#7a8fab;font-size:0.85rem;text-align:center;max-width:220px;margin-top:0.5rem;line-height:1.5"></div>
         <a id="sectorLink" href="#" style="font-family:'Orbitron',monospace;font-size:0.65rem;letter-spacing:2px;color:#00d4aa;margin-top:1rem;display:none">VER CENTRO ↗</a>
-      </div>
+      </div><!-- /semaforo-wrapper -->
     </div>
 
     <div class="estado-right">
@@ -96,6 +111,12 @@
     <div class="sector-tabs" id="sectorTabs"></div>
   </div>
 
+  <!-- Sector map -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-family:'Orbitron',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);margin-bottom:0.75rem">UBICACIÓN DEL SECTOR</div>
+    <div id="habitanteMap" style="height:220px;border:1px solid var(--border)"></div>
+  </div>
+
   <div class="sms-section">
     <div class="sms-title">CONSULTA EL ESTADO VÍA SMS</div>
     <div class="sms-subtitle">Simula el envío de un SMS para consultar el estado del agua de tu sector.</div>
@@ -111,8 +132,8 @@
 <footer class="footer">SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/simca.js"></script>
+<script src="/js/config.js?v=4"></script>
+<script src="/js/simca.js?v=4"></script>
 <script>
 const params = new URLSearchParams(location.search);
 let sector = params.get("sector") || "VN-CENTRO";
@@ -145,6 +166,7 @@ function cambiarSector(s) {
     b.classList.toggle("active", b.textContent === (SECTOR_NAMES[s] || s));
   });
   cargar();
+  initHabitanteMap(s);
 }
 
 function setSemaforo(status) {
@@ -240,8 +262,27 @@ SIMCA · SEREMI Valparaíso`;
   }
 }
 
+let habitanteMap = null;
+let habitanteMarker = null;
+
+function initHabitanteMap(sectorId) {
+  const coords = SECTOR_COORDS[sectorId];
+  if (!coords) return;
+  if (!habitanteMap) {
+    habitanteMap = initDarkMap("habitanteMap", coords.lat, coords.lng, 14);
+    habitanteMarker = L.marker([coords.lat, coords.lng], {
+      icon: createColoredMarker("#00d4aa")
+    }).addTo(habitanteMap)
+      .bindPopup(`<b style="color:#00d4aa">${coords.name}</b><br>Sector monitoreado por SIMCA`);
+  } else {
+    habitanteMap.setView([coords.lat, coords.lng], 14);
+    habitanteMarker.setLatLng([coords.lat, coords.lng]);
+  }
+}
+
 initSectores();
 cargar();
+initHabitanteMap(sector);
 setInterval(cargar, 15000);
 </script>
 </body>

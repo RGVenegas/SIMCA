@@ -3,93 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SIMCA — Alertas</title>
+  <title>SIMCA — Gestión de Alertas</title>
   <link rel="stylesheet" href="/css/simca.css">
+  <style>
+    .alert-card { background: #06101a; border-left: 4px solid var(--critical); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
+    .alert-card:hover { background: #0a1628; }
+    .alert-card.warning { border-left-color: var(--warning); }
+    .alert-card-left { flex: 1; }
+    .alert-title { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+    .alert-node-id { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--cyan); letter-spacing: 1px; }
+    .alert-msg-text { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; color: var(--text); }
+    .alert-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .export-row { display: flex; gap: 0.75rem; margin-bottom: 1.2rem; align-items: center; }
+    .export-label { font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: var(--text-muted); }
+    .section-title { font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .empty-state { color: var(--safe); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: center; padding: 2rem; }
+  </style>
 </head>
 <body>
-<nav>
-  <span class="logo">SIMCA · AUTORIDAD</span>
-  <div>
-    <a href="/autoridad/dashboard.html">Dashboard</a>
-    <a href="/autoridad/sensores.html">Sensores</a>
-    <a href="/autoridad/alertas.html" class="active">Alertas</a>
-    <a href="/autoridad/reportes.html">Reportes</a>
-    <a href="/index.html">← Inicio</a>
+
+<nav class="nav">
+  <div class="nav-left">
+    <a class="nav-logo" href="/index.html">&#128167; SIMCA</a>
+    <div class="nav-tabs">
+      <a href="/autoridad/dashboard.html" class="nav-tab">DASHBOARD</a>
+      <a href="/autoridad/sensores.html" class="nav-tab">SENSORES</a>
+      <a href="/autoridad/alertas.html" class="nav-tab active">ALERTAS</a>
+      <a href="/autoridad/reportes.html" class="nav-tab">REPORTES</a>
+    </div>
+  </div>
+  <div class="nav-status">
+    <span class="nav-live"><span class="live-dot"></span> EN VIVO</span>
+    <span class="nav-time" id="navTime">—</span>
+    <div class="nav-avatar">A</div>
+    <span class="nav-user">Autoridad Sanitaria</span>
+    <span class="nav-role-badge">ADMIN</span>
+    <a href="/index.html" class="btn-salir">← Salir</a>
   </div>
 </nav>
 
 <div class="container">
-  <div class="page-header">
-    <h1>GESTIÓN DE ALERTAS</h1>
-  </div>
 
+  <!-- KPI summary -->
+  <div class="grid grid-4" style="margin-bottom:1.5rem" id="kpis"></div>
+
+  <!-- Active alerts -->
   <div style="margin-bottom:2rem">
-    <h2>ALERTAS ACTIVAS</h2>
-    <div id="activasContainer"></div>
+    <div class="section-title">ALERTAS ACTIVAS</div>
+    <div id="activasContainer">
+      <div class="empty-state">Cargando alertas activas...</div>
+    </div>
   </div>
 
-  <div>
-    <h2>HISTORIAL</h2>
-    <div class="card">
-      <table>
+  <!-- History table -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem">
+      <div class="section-title" style="margin-bottom:0">HISTORIAL COMPLETO</div>
+      <div class="export-row" style="margin-bottom:0">
+        <span class="export-label">EXPORTAR:</span>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportPDF()">PDF</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="table">
         <thead>
-          <tr><th>Fecha</th><th>Nodo</th><th>Sector</th><th>Tipo</th><th>Nivel</th><th>Mensaje</th><th>SMS</th><th>Estado</th></tr>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>NODO</th>
+            <th>SECTOR</th>
+            <th>TIPO</th>
+            <th>VALOR</th>
+            <th>SMS</th>
+            <th>ESTADO</th>
+            <th>ACCIÓN</th>
+          </tr>
         </thead>
         <tbody id="historialTable">
-          <tr><td colspan="8" style="color:var(--muted);text-align:center">Cargando...</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem">Cargando historial...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
+
 </div>
 
-<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+<footer class="footer">SIMCA v3.0 · SEREMI Región de Valparaíso · 2026 · Todos los derechos reservados</footer>
 
-<script src="/js/config.js"></script>
-<script src="/js/simca.js"></script>
+<script src="/js/config.js?v=4"></script>
+<script src="/js/simca.js?v=4"></script>
 <script>
+  let allAlertas = [];
+
   async function resolver(id) {
+    const btn = document.querySelector(`[data-resolve="${id}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = "..."; }
     await fetch(`${API_BASE}/autoridad/alertas/${id}/resolver`, { method: "POST" });
-    cargar();
+    await cargar();
   }
 
-  async function cargar() {
-    const alertas = await fetchJSON("/autoridad/alertas");
-    const activas = alertas.filter(a => a.is_active);
+  function renderKpis(alertas) {
+    const activas   = alertas.filter(a => a.is_active).length;
+    const criticas  = alertas.filter(a => a.is_active && a.level === "CRITICAL").length;
+    const warnings  = alertas.filter(a => a.is_active && a.level === "WARNING").length;
+    const resueltas = alertas.filter(a => !a.is_active).length;
+    const items = [
+      { label: "ALERTAS ACTIVAS", value: activas,   cls: activas > 0 ? "card-alert" : "card" },
+      { label: "CRÍTICAS",        value: criticas,  cls: criticas > 0 ? "card-alert" : "card" },
+      { label: "WARNING",         value: warnings,  cls: warnings > 0 ? "card-warn" : "card" },
+      { label: "RESUELTAS HOY",   value: resueltas, cls: "card-cyan" },
+    ];
+    document.getElementById("kpis").innerHTML = items.map(m => `
+      <div class="${m.cls}" style="text-align:center;padding:1.25rem 1rem">
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value">${m.value}</div>
+      </div>
+    `).join("");
+  }
 
+  function renderActivas(alertas) {
+    const activas = alertas.filter(a => a.is_active);
     const cont = document.getElementById("activasContainer");
     if (!activas.length) {
-      cont.innerHTML = `<div class="card" style="color:var(--safe);text-align:center;padding:2rem">Sin alertas activas</div>`;
-    } else {
-      cont.innerHTML = activas.map(a => `
-        <div class="card ${a.level === 'CRITICAL' ? 'card-red' : 'card-warn'}" style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <span class="${badgeClass(a.level)}" style="margin-right:0.5rem">${a.level}</span>
-            <strong>${a.type}</strong> — ${a.message}
-            <div class="timestamp" style="margin-top:0.25rem">Nodo: ${a.node_id} · Sector: ${a.sector_id} · ${formatDate(a.created_at)}</div>
-          </div>
-          <button class="btn btn-danger btn-sm" onclick="resolver('${a.id}')">RESOLVER</button>
-        </div>
-      `).join("");
+      cont.innerHTML = `<div class="card" style="border-color:var(--safe)"><div class="empty-state">✓ Sin alertas activas — sistema operando con normalidad</div></div>`;
+      return;
     }
+    cont.innerHTML = activas.map(a => `
+      <div class="alert-card ${a.level === 'WARNING' ? 'warning' : ''}">
+        <div class="alert-card-left">
+          <div class="alert-title">
+            <span class="${a.level === 'CRITICAL' ? 'badge-critical' : 'badge-warning'}">${a.level}</span>
+            <span class="alert-node-id">${a.node_id}</span>
+            <span style="color:var(--text-muted);font-size:0.8rem">·</span>
+            <span style="font-family:'Rajdhani',sans-serif;font-size:0.85rem;color:var(--text-muted)">${a.sector_id}</span>
+          </div>
+          <div class="alert-msg-text">${a.message}</div>
+          <div class="alert-meta">Tipo: ${a.type} · SMS: ${a.sms_sent ? '✓ enviado' : '—'} · ${formatDate(a.created_at)}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" data-resolve="${a.id}" onclick="resolver('${a.id}')">RESOLVER</button>
+      </div>
+    `).join("");
+  }
 
+  function renderHistorial(alertas) {
     const tbody = document.getElementById("historialTable");
+    if (!alertas.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem">Sin registros</td></tr>`;
+      return;
+    }
     tbody.innerHTML = alertas.map(a => `
       <tr>
-        <td class="timestamp">${formatDate(a.created_at)}</td>
-        <td style="color:var(--cyan)">${a.node_id}</td>
-        <td>${a.sector_id}</td>
-        <td>${a.type}</td>
-        <td><span class="${badgeClass(a.level)}">${a.level}</span></td>
-        <td>${a.message}</td>
-        <td>${a.sms_sent}</td>
-        <td><span class="${a.is_active ? 'badge badge-critical' : 'badge badge-safe'}">${a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-muted)">${formatDate(a.created_at)}</td>
+        <td style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--cyan)">${a.node_id}</td>
+        <td style="font-family:'Rajdhani',sans-serif;color:var(--text)">${a.sector_id}</td>
+        <td style="font-family:'Rajdhani',sans-serif;color:var(--text)">${a.type}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text)">${a.message}</td>
+        <td><span class="${a.sms_sent ? 'tag-safe' : ''}" style="${!a.sms_sent ? 'color:var(--text-muted)' : ''}">${a.sms_sent ? '✓ SMS' : '—'}</span></td>
+        <td><span class="${a.is_active ? 'badge-critical' : 'badge-safe'}">${a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
+        <td>
+          ${a.is_active
+            ? `<button class="btn btn-danger btn-sm" data-resolve="${a.id}" onclick="resolver('${a.id}')">RESOLVER</button>`
+            : `<span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted)">${a.resolved_at ? formatDate(a.resolved_at) : '—'}</span>`
+          }
+        </td>
       </tr>
     `).join("");
   }
 
+  function exportCSV() {
+    const rows = [["timestamp","nodo","sector","tipo","mensaje","sms","estado"]];
+    allAlertas.forEach(a => rows.push([
+      a.created_at, a.node_id, a.sector_id, a.type, a.message,
+      a.sms_sent ? "si" : "no", a.is_active ? "activa" : "resuelta"
+    ]));
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `simca_alertas_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  function exportPDF() {
+    window.print();
+  }
+
+  async function cargar() {
+    allAlertas = await fetchJSON("/autoridad/alertas");
+    renderKpis(allAlertas);
+    renderActivas(allAlertas);
+    renderHistorial(allAlertas);
+    document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
+  }
+
   cargar();
   setInterval(cargar, 15000);
+  setInterval(() => {
+    document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
+  }, 1000);
 </script>
 </body>
 </html>

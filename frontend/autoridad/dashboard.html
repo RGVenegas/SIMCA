@@ -3,126 +3,202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SIMCA — Dashboard</title>
+  <title>SIMCA — Dashboard Autoridad</title>
   <link rel="stylesheet" href="/css/simca.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .dash-right { display: flex; flex-direction: column; gap: 1.5rem; }
+    .alert-feed { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+    .alert-item { background: #06101a; border-left: 3px solid var(--critical); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .alert-item.warning { border-left-color: var(--warning); }
+    .alert-info { flex: 1; }
+    .alert-node { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--cyan); letter-spacing: 1px; }
+    .alert-msg { font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: var(--text); margin-top: 0.15rem; }
+    .alert-time { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; }
+    .map-wrap { height: 300px; border: 1px solid var(--border); }
+    .sms-preview { background: #0a1628; border: 1px solid #1a3a5c; padding: 1.2rem 1.5rem; }
+    .sms-preview-title { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .sms-msg { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #7aff9a; background: #011a0a; border: 1px solid #0a3a1a; padding: 0.75rem 1rem; line-height: 1.6; }
+    .chart-sector-select { background: #06101a; border: 1px solid var(--border); color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; padding: 0.3rem 0.6rem; cursor: pointer; }
+    @media(max-width:900px){ .dash-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-<nav>
-  <span class="logo">SIMCA · AUTORIDAD</span>
-  <div>
-    <a href="/autoridad/dashboard.html" class="active">Dashboard</a>
-    <a href="/autoridad/sensores.html">Sensores</a>
-    <a href="/autoridad/alertas.html">Alertas</a>
-    <a href="/autoridad/reportes.html">Reportes</a>
-    <a href="/index.html">← Inicio</a>
+
+<nav class="nav">
+  <div class="nav-left">
+    <a class="nav-logo" href="/index.html">&#128167; SIMCA</a>
+    <div class="nav-tabs">
+      <a href="/autoridad/dashboard.html" class="nav-tab active">DASHBOARD</a>
+      <a href="/autoridad/sensores.html" class="nav-tab">SENSORES</a>
+      <a href="/autoridad/alertas.html" class="nav-tab">ALERTAS</a>
+      <a href="/autoridad/reportes.html" class="nav-tab">REPORTES</a>
+    </div>
+  </div>
+  <div class="nav-status">
+    <span class="nav-live"><span class="live-dot"></span> EN VIVO</span>
+    <span class="nav-time" id="navTime">—</span>
+    <div class="nav-avatar">A</div>
+    <span class="nav-user">Autoridad Sanitaria</span>
+    <span class="nav-role-badge">ADMIN</span>
+    <a href="/index.html" class="btn-salir">← Salir</a>
   </div>
 </nav>
 
 <div class="container">
-  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
-    <h1>DASHBOARD</h1>
-    <span class="timestamp" id="lastUpdate">—</span>
-  </div>
 
+  <!-- KPI metrics -->
   <div class="grid grid-4" style="margin-bottom:1.5rem" id="metricas"></div>
 
-  <div class="grid grid-2" style="margin-bottom:1.5rem">
+  <!-- Chart + Alert feed -->
+  <div class="dash-grid">
     <div class="card">
-      <h2>pH ÚLTIMAS 12H — VIÑA CENTRO</h2>
-      <canvas id="chartPh" height="120"></canvas>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <span style="font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:2px;color:var(--text-muted)">TENDENCIA pH / TURBIDEZ</span>
+        <select class="chart-sector-select" id="chartSector" onchange="cargarGraficos(this.value)">
+          <option value="VN-CENTRO">VN-CENTRO</option>
+          <option value="VN-MIRAFLORES">VN-MIRAFLORES</option>
+          <option value="VN-FORESTAL">VN-FORESTAL</option>
+          <option value="VN-RENACA">VN-RENACA</option>
+          <option value="VN-RECREO">VN-RECREO</option>
+        </select>
+      </div>
+      <canvas id="chartPh" height="110" style="margin-bottom:1rem"></canvas>
+      <canvas id="chartTurb" height="110"></canvas>
     </div>
-    <div class="card">
-      <h2>TURBIDEZ ÚLTIMAS 12H — VIÑA CENTRO</h2>
-      <canvas id="chartTurb" height="120"></canvas>
+
+    <div class="dash-right">
+      <div class="card" style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);margin-bottom:0.75rem">ALERTAS RECIENTES</div>
+        <div class="alert-feed" id="alertFeed">
+          <div style="color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:0.75rem;text-align:center;padding:1rem">Cargando alertas...</div>
+        </div>
+      </div>
+
+      <div class="sms-preview">
+        <div class="sms-preview-title">ÚLTIMO SMS ENVIADO (MOCK)</div>
+        <div class="sms-msg" id="smsPreview">Sin alertas críticas recientes.</div>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>MAPA DE SECTORES</h2>
-    <div id="map"></div>
+  <!-- Map -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-family:'Orbitron',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);margin-bottom:0.75rem">MAPA DE SECTORES — VIÑA DEL MAR</div>
+    <div id="map" class="map-wrap"></div>
   </div>
+
 </div>
 
-<footer>SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
+<footer class="footer">SIMCA v3.0 · SEREMI Región de Valparaíso · 2026 · Todos los derechos reservados</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/simca.js"></script>
+<script src="/js/config.js?v=4"></script>
+<script src="/js/simca.js?v=4"></script>
 <script>
   let map, chartPh, chartTurb;
+
   const CHART_OPTS = (label, color) => ({
     type: "line",
-    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + "22", tension: 0.3, pointRadius: 3 }] },
+    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + "22", tension: 0.4, pointRadius: 2, fill: true }] },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: "#e0e8ff" } } },
+      plugins: { legend: { labels: { color: "#c8d8e8", font: { family: "Rajdhani", size: 12 } } } },
       scales: {
-        x: { ticks: { color: "#7a8fab" }, grid: { color: "#1e3a5f" } },
-        y: { ticks: { color: "#7a8fab" }, grid: { color: "#1e3a5f" } },
+        x: { ticks: { color: "#5a7a9a", font: { family: "JetBrains Mono", size: 10 } }, grid: { color: "#0d2040" } },
+        y: { ticks: { color: "#5a7a9a", font: { family: "JetBrains Mono", size: 10 } }, grid: { color: "#0d2040" } },
       },
     },
   });
 
   function renderMetricas(d) {
-    document.getElementById("metricas").innerHTML = [
-      { label: "pH PROMEDIO",    value: d.ph_promedio },
-      { label: "NODOS ACTIVOS",  value: `${d.nodos_activos}/${d.total_nodos}` },
-      { label: "ALERTAS HOY",    value: d.alertas_hoy },
-      { label: "ALERTAS CRÍTICAS", value: d.alertas_criticas },
-    ].map(m => `
-      <div class="card ${m.label === 'ALERTAS CRÍTICAS' && m.value > 0 ? 'card-red' : 'card-cyan'}">
+    const items = [
+      { label: "pH PROMEDIO",       value: d.ph_promedio != null ? d.ph_promedio.toFixed(2) : "—", cls: "card-cyan" },
+      { label: "TURBIDEZ MÁXIMA",   value: d.turbidez_maxima != null ? d.turbidez_maxima.toFixed(2) + " NTU" : "—", cls: "card" },
+      { label: "NODOS ACTIVOS",     value: `${d.nodos_activos}/${d.total_nodos}`, cls: "card" },
+      { label: "ALERTAS HOY",       value: d.alertas_hoy ?? 0, cls: d.alertas_criticas > 0 ? "card-alert" : "card" },
+    ];
+    document.getElementById("metricas").innerHTML = items.map(m => `
+      <div class="${m.cls}" style="text-align:center;padding:1.5rem 1rem">
         <div class="metric-label">${m.label}</div>
         <div class="metric-value">${m.value}</div>
       </div>
     `).join("");
   }
 
-  async function cargarGraficos() {
-    const g = await fetchJSON("/graficos/VN-CENTRO");
+  async function cargarGraficos(sector) {
+    const g = await fetchJSON(`/graficos/${sector}`);
     if (chartPh) { chartPh.data.labels = g.labels; chartPh.data.datasets[0].data = g.ph; chartPh.update(); }
     if (chartTurb) { chartTurb.data.labels = g.labels; chartTurb.data.datasets[0].data = g.turbidity; chartTurb.update(); }
   }
 
-  async function cargarMapa(nodes) {
-    if (!map) {
-      map = initDarkMap("map", -33.025, -71.540, 13);
+  function renderAlertFeed(alertas) {
+    const feed = document.getElementById("alertFeed");
+    const activas = alertas.filter(a => a.is_active).slice(0, 6);
+    if (!activas.length) {
+      feed.innerHTML = `<div style="color:var(--safe);font-family:'JetBrains Mono',monospace;font-size:0.75rem;text-align:center;padding:1rem">✓ Sin alertas activas</div>`;
+      document.getElementById("smsPreview").textContent = "Sin alertas críticas recientes.";
+      return;
     }
+    feed.innerHTML = activas.map(a => `
+      <div class="alert-item ${a.level === 'WARNING' ? 'warning' : ''}">
+        <div class="alert-info">
+          <div class="alert-node">${a.node_id} · ${a.sector_id}</div>
+          <div class="alert-msg">${a.message}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem">
+          <span class="badge-${a.level === 'CRITICAL' ? 'critical' : 'warning'}">${a.level}</span>
+          <span class="alert-time">${formatDate(a.created_at)}</span>
+        </div>
+      </div>
+    `).join("");
+    const critical = activas.find(a => a.level === "CRITICAL");
+    if (critical) {
+      document.getElementById("smsPreview").textContent =
+        `[SIMCA ALERT] ${critical.sector_id}: ${critical.message} Contacte SEREMI: 800-SIMCA-VNA`;
+    }
+  }
+
+  async function cargarMapa(nodes) {
+    if (!map) map = initDarkMap("map", -33.025, -71.540, 13);
+    map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
     const sectorStatus = {};
     for (const n of nodes) {
-      if (!sectorStatus[n.sector_id] || n.status === "WARNING") {
+      if (!sectorStatus[n.sector_id] || n.status === "WARNING" || n.status === "CONTAMINATED") {
         sectorStatus[n.sector_id] = n.status;
       }
     }
-    map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
     for (const [sid, coords] of Object.entries(SECTOR_COORDS)) {
       const st = sectorStatus[sid] || "OFFLINE";
       const node = nodes.find(n => n.sector_id === sid);
       L.marker([coords.lat, coords.lng], { icon: createColoredMarker(markerColor(st)) })
         .addTo(map)
-        .bindPopup(`
-          <b style="color:#00f5ff">${coords.name}</b><br>
-          pH: ${node ? formatPh(node.ph) : "—"}<br>
-          Turbidez: ${node?.turbidity?.toFixed(2) ?? "—"} NTU<br>
-          Estado: <b>${st}</b>
-        `);
+        .bindPopup(`<b style="color:#00d4aa">${coords.name}</b><br>pH: ${node ? formatPh(node.ph) : "—"}<br>Turbidez: ${node?.turbidity?.toFixed(2) ?? "—"} NTU<br>Estado: <b>${st}</b>`);
     }
   }
 
   async function cargar() {
-    const d = await fetchJSON("/autoridad/dashboard");
+    const [d, alertas] = await Promise.all([
+      fetchJSON("/autoridad/dashboard"),
+      fetchJSON("/autoridad/alertas"),
+    ]);
     renderMetricas(d);
-    await cargarGraficos();
+    renderAlertFeed(alertas);
     await cargarMapa(d.nodes);
-    document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString("es-CL");
+    document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
   }
 
   async function init() {
-    chartPh   = new Chart(document.getElementById("chartPh"),   CHART_OPTS("pH", "#00f5ff"));
-    chartTurb = new Chart(document.getElementById("chartTurb"), CHART_OPTS("NTU", "#ff006e"));
+    chartPh   = new Chart(document.getElementById("chartPh"),   CHART_OPTS("pH", "#00d4aa"));
+    chartTurb = new Chart(document.getElementById("chartTurb"), CHART_OPTS("Turbidez NTU", "#ff6b00"));
     await cargar();
+    await cargarGraficos("VN-CENTRO");
     setInterval(cargar, 15000);
+    setInterval(() => {
+      document.getElementById("navTime").textContent = new Date().toLocaleTimeString("es-CL");
+    }, 1000);
   }
 
   init();

@@ -21,12 +21,12 @@
   </div>
 </nav>
 
-<div class="tab-nav">
+<div class="tab-nav" style="margin-top:var(--nav-height)">
   <a href="/habitante/estado.html" class="tab-btn">MI AGUA</a>
   <a href="/habitante/historial.html" class="tab-btn active">HISTORIAL</a>
 </div>
 
-<div class="container" style="padding-top:1.5rem">
+<div class="container" style="padding-top:1.5rem;margin-top:0">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
     <div>
       <div class="metric-label" style="font-size:0.65rem;letter-spacing:3px;margin-bottom:0.3rem">HISTORIAL DE ALERTAS — VIÑA DEL MAR</div>
@@ -35,7 +35,8 @@
   </div>
 
   <div class="card">
-    <table>
+    <div style="overflow-x:auto">
+    <table class="table">
       <thead>
         <tr>
           <th>Fecha</th>
@@ -50,13 +51,14 @@
         <tr><td colspan="6" style="text-align:center;color:#2a4060;padding:2rem">Cargando...</td></tr>
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
 <footer class="footer">SIMCA v3.0 · SEREMI Región de Valparaíso · 2026</footer>
 
-<script src="/js/config.js"></script>
-<script src="/js/simca.js"></script>
+<script src="/js/config.js?v=4"></script>
+<script src="/js/simca.js?v=4"></script>
 <script>
 const params = new URLSearchParams(location.search);
 let sector = params.get("sector") || "VN-CENTRO";

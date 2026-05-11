@@ -201,11 +201,20 @@ nav,
   text-shadow: 0 0 10px var(--cyan-glow);
 }
 
+/* Nav left container (logo + tabs row) */
+.nav-left {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
 /* Right-side status area */
 .nav-status {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -220,18 +229,26 @@ nav,
   letter-spacing: 0.05em;
   color: var(--cyan);
 }
-.nav-live::before {
-  content: '●';
-  font-size: 0.65rem;
+
+/* Pulsing dot used as <span class="live-dot"> */
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
   animation: pulse-live 1.4s ease-in-out infinite;
-  color: var(--cyan);
+  flex-shrink: 0;
+  display: inline-block;
 }
 
-.nav-timestamp {
+.nav-timestamp,
+.nav-time {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--text-muted);
   letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 /* Avatar */
@@ -258,10 +275,12 @@ nav,
 }
 
 .nav-user {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.1rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 .nav-user-name {
   font-family: var(--font-body);
@@ -276,6 +295,19 @@ nav,
   color: var(--label-orange);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+.nav-role-badge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label-orange);
+  background: rgba(255,107,0,0.1);
+  border: 1px solid rgba(255,107,0,0.35);
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  white-space: nowrap;
 }
 
 /* Salir button */
