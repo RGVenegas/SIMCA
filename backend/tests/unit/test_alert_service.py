@@ -1,4 +1,3 @@
-# backend/tests/unit/test_alert_service.py
 from unittest.mock import MagicMock
 from application.services.alert_service import AlertService
 from domain.entities.alert import Alert

@@ -28,7 +28,7 @@ export default function Navbar({ rol }) {
   return (
     <nav className="nav">
       <div className="nav-left">
-        <Link className="nav-logo" to="/">💧 SIMCA</Link>
+        <Link className="nav-logo" to="/">SIMCA</Link>
         <div className="nav-tabs">
           {tabs.map(t => (
             <Link

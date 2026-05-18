@@ -1,6 +1,4 @@
-from datetime import datetime
-
-def test_dashboard(client):
+def test_dashboard_retorna_metricas_basicas(client):
     response = client.get("/api/autoridad/dashboard")
     assert response.status_code == 200
     data = response.json()
@@ -9,12 +7,12 @@ def test_dashboard(client):
     assert "total_nodos" in data
     assert data["total_nodos"] == 8
 
-def test_sensores(client):
+def test_listar_sensores_devuelve_los_8_nodos(client):
     response = client.get("/api/autoridad/sensores")
     assert response.status_code == 200
     assert len(response.json()) == 8
 
-def test_alertas(client):
+def test_alertas_endpoint_responde_lista(client):
     response = client.get("/api/autoridad/alertas")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
@@ -36,7 +34,7 @@ def test_resolver_alerta(client, session):
     session.refresh(alert)
     assert alert.is_active == False
 
-def test_graficos(client):
+def test_graficos_de_sector_retorna_series(client):
     response = client.get("/api/graficos/VN-CENTRO")
     assert response.status_code == 200
     data = response.json()

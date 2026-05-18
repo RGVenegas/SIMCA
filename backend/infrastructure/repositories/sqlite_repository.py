@@ -25,6 +25,7 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
             .where(SensorReading.sector_id == sector_id)
             .where(SensorReading.recorded_at >= cutoff)
             .order_by(SensorReading.recorded_at)
+            .limit(500)
         ).all()
 
     def get_all_nodes(self) -> List[IoTNode]:
@@ -55,7 +56,7 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
             .order_by(Alert.created_at.desc())
         ).all()
 
-    def get_all(self, hours: int = 12) -> List[Alert]:
+    def get_all(self, hours: int = 24 * 30) -> List[Alert]:
         cutoff = datetime.now() - timedelta(hours=hours)
         return self._session.exec(
             select(Alert)
@@ -63,12 +64,20 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
             .order_by(Alert.created_at.desc())
         ).all()
 
-    def get_alerts_by_sector(self, sector_id: str, hours: int = 12) -> List[Alert]:
+    def get_alerts_by_sector(self, sector_id: str, hours: int = 24 * 7) -> List[Alert]:
         cutoff = datetime.now() - timedelta(hours=hours)
         return self._session.exec(
             select(Alert)
             .where(Alert.sector_id == sector_id)
             .where(Alert.created_at >= cutoff)
+            .order_by(Alert.created_at.desc())
+        ).all()
+
+    def get_active_alerts_by_sector(self, sector_id: str) -> List[Alert]:
+        return self._session.exec(
+            select(Alert)
+            .where(Alert.sector_id == sector_id)
+            .where(Alert.is_active == True)
             .order_by(Alert.created_at.desc())
         ).all()
 
@@ -94,7 +103,7 @@ class SQLiteRepository(ISensorRepository, IAlertRepository):
         if alerts:
             self._session.commit()
 
-    def delete_old_alerts(self, hours: int = 12) -> None:
+    def delete_old_alerts(self, hours: int = 24 * 30) -> None:
         cutoff = datetime.now() - timedelta(hours=hours)
         old = self._session.exec(
             select(Alert).where(Alert.created_at < cutoff)

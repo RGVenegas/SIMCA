@@ -1,9 +1,19 @@
-export const API_BASE = '/api'
+export const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
 export async function fetchJSON(path) {
   const res = await fetch(API_BASE + path)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
+}
+
+export async function postJSON(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.status === 204 ? null : res.json();
 }
 
 export function badgeClass(status) {
@@ -13,6 +23,20 @@ export function badgeClass(status) {
     ONLINE: 'badge-safe', INFO: 'badge-info', CRITICAL: 'badge-critical'
   }
   return 'badge ' + (map[status?.toUpperCase()] || 'badge-info')
+}
+
+export const statusLabel = {
+  SAFE: 'POTABLE',
+  WARNING: 'ADVERTENCIA',
+  CONTAMINATED: 'CONTAMINADO',
+  ONLINE: 'ACTIVO',
+  OFFLINE: 'CAIDO',
+  CRITICAL: 'CRITICO',
+  UNKNOWN: 'SIN DATOS',
+};
+
+export function isNodeActive(n) {
+  return n && n.status !== 'OFFLINE';
 }
 
 export function formatDate(iso) {
@@ -35,14 +59,4 @@ export const SECTOR_COORDS = {
 export function markerColor(status) {
   const map = { SAFE: '#00ff88', WARNING: '#ffaa00', CONTAMINATED: '#ff3366', UNKNOWN: '#4a5568' }
   return map[status?.toUpperCase()] || '#4a5568'
-}
-
-export function createColoredMarker(color) {
-  const L = window.L
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 8px ${color};"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-  })
 }

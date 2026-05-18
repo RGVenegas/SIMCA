@@ -41,7 +41,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchJSON('/sectores').then(s => {
       setSectores(s)
-      if (s.length) { setSectorSel(s[0].id); cargarGraficos(s[0].id) }
+      if (s.length) setSectorSel(s[0].id)
     })
     cargar()
     const id = setInterval(cargar, 15000)
@@ -92,7 +92,7 @@ export default function Dashboard() {
         </div>
 
         {/* Gráficos + Alertas recientes + SMS */}
-        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'start' }}>
 
           {/* Columna izquierda: gráficos */}
           <div className="card">
@@ -146,6 +146,26 @@ export default function Dashboard() {
               ) : (
                 <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.75rem' }}>Sin SMS enviados aún</div>
               )}
+            </div>
+
+            <div className="card">
+              <div style={{ fontFamily: "'Orbitron',monospace", fontSize: '0.65rem', letterSpacing: '3px', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>ESTADO POR SECTOR</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {sectores.map(s => {
+                  const alertasSector = activeAlerts.filter(a => a.sector_id === s.id)
+                  const status = alertasSector.length === 0 ? 'POTABLE'
+                    : alertasSector.some(a => a.level === 'CRITICAL') ? 'CONTAMINADO'
+                    : 'ADVERTENCIA'
+                  const color = status === 'POTABLE' ? 'var(--safe)' : status === 'CONTAMINADO' ? 'var(--critical)' : 'var(--warning)'
+                  const icon = status === 'POTABLE' ? '✓' : status === 'CONTAMINADO' ? '✕' : '⚠'
+                  return (
+                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0.65rem', background: '#06101a', borderLeft: `3px solid ${color}` }}>
+                      <span style={{ fontFamily: "'Orbitron',monospace", fontSize: '0.62rem', color: 'var(--cyan)', letterSpacing: '1px' }}>{s.id}</span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.62rem', color }}>{icon} {status}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>

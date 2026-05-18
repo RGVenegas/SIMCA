@@ -14,7 +14,7 @@ function getSemaforoClass(status) {
 function getSemaforoIcon(status) {
   if (status === 'SAFE') return '✓'
   if (status === 'WARNING') return '!'
-  if (status === 'CONTAMINATED') return '🚫'
+  if (status === 'CONTAMINATED') return 'X'
   return '?'
 }
 function getSemaforoLabel(status) {
@@ -54,7 +54,6 @@ export default function Estado() {
   function cambiarSector(s) {
     setSector(s)
     setSearchParams({ sector: s })
-    cargar(s)
   }
 
   async function enviarSMS() {
@@ -68,7 +67,7 @@ export default function Estado() {
     try {
       const d = await fetchJSON(`/habitante/estado?sector=${target}`)
       const statusText = d.water_status === 'SAFE' ? 'POTABLE' : d.water_status === 'WARNING' ? 'ADVERTENCIA' : 'NO POTABLE'
-      setSmsRespuesta(`DE: SIMCA <+56 9 XXXX XXXX>\n\n🚰 ESTADO ${d.sector_name?.toUpperCase()}\n\npH: ${d.ph?.toFixed(1) ?? '—'} | Turbidez: ${d.turbidity?.toFixed(1) ?? '—'} NTU\nEstado: ${statusText}\n\nInfo: 800-555-SIMCA\nSIMCA · SEREMI Valparaíso`)
+      setSmsRespuesta(`DE: SIMCA <+56 9 XXXX XXXX>\n\nESTADO ${d.sector_name?.toUpperCase()}\n\npH: ${d.ph?.toFixed(1) ?? '—'} | Turbidez: ${d.turbidity?.toFixed(1) ?? '—'} NTU\nEstado: ${statusText}\n\nInfo: 800-555-SIMCA\nSIMCA · SEREMI Valparaíso`)
     } catch (e) {
       setSmsRespuesta('Error al consultar el servicio.')
     }
@@ -83,6 +82,16 @@ export default function Estado() {
 
   const coords = SECTOR_COORDS[sector]
   const center = coords ? [coords.lat, coords.lng] : [-33.024, -71.551]
+
+  const ESTADOS_CONOCIDOS = ['SAFE', 'WARNING', 'CONTAMINATED'];
+  const estadoValido = ESTADOS_CONOCIDOS.includes(data?.water_status) ? data.water_status : 'UNKNOWN';
+
+  const phMostrado = data?.has_active_alert && data?.active_alert?.type === 'PH'
+    ? data.active_alert.trigger_value
+    : data?.ph;
+  const turbMostrada = data?.has_active_alert && data?.active_alert?.type === 'TURBIDITY'
+    ? data.active_alert.trigger_value
+    : data?.turbidity;
 
   return (
     <>
@@ -103,15 +112,15 @@ export default function Estado() {
         <div className="estado-main">
           <div className="estado-left card">
             <div className="semaforo-wrapper">
-              <div className={`semaforo-dot ${data ? getSemaforoClass(data.water_status) : 'dot-unknown'}`}>
-                <div>{data ? getSemaforoIcon(data.water_status) : '?'}</div>
+              <div className={`semaforo-dot ${data ? getSemaforoClass(estadoValido) : 'dot-unknown'}`}>
+                <div>{data ? getSemaforoIcon(estadoValido) : '?'}</div>
               </div>
-              <div className="semaforo-label" style={{ color: data?.water_status === 'SAFE' ? '#00d4aa' : data?.water_status === 'WARNING' ? '#ffaa00' : data?.water_status === 'CONTAMINATED' ? '#ff3030' : '#4a6080' }}>
-                {data ? getSemaforoLabel(data.water_status) : 'CARGANDO...'}
+              <div className="semaforo-label" style={{ color: estadoValido === 'SAFE' ? '#00d4aa' : estadoValido === 'WARNING' ? '#ffaa00' : estadoValido === 'CONTAMINATED' ? '#ff3030' : '#4a6080' }}>
+                {data ? getSemaforoLabel(estadoValido) : 'CARGANDO...'}
               </div>
               <div style={{ fontFamily: "'Rajdhani',sans-serif", color: '#4a6080', fontSize: '0.85rem', marginTop: '0.3rem' }}>{data?.sector_name}</div>
               <div style={{ fontFamily: "'Rajdhani',sans-serif", color: '#7a8fab', fontSize: '0.85rem', textAlign: 'center', maxWidth: '220px', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                {data ? getSemaforoDesc(data.water_status) : ''}
+                {data ? getSemaforoDesc(estadoValido) : ''}
               </div>
             </div>
           </div>
@@ -119,17 +128,23 @@ export default function Estado() {
           <div className="estado-right">
             <div className="metric-row">
               <div className="metric-label" style={{ fontSize: '0.7rem', letterSpacing: '3px', marginBottom: '0.3rem' }}>pH/CONCENTRACIÓN</div>
-              <div className={data ? getPhClass(data.water_status) : 'ph-value'}>
-                {data?.ph != null ? data.ph.toFixed(1) : '—'}
+              <div className={data ? getPhClass(estadoValido) : 'ph-value'}>
+                {phMostrado != null ? phMostrado.toFixed(1) : '—'}
               </div>
               <div className="ph-range">Rango seguro: 6.5 - 8.5</div>
+              {data?.has_active_alert && data?.active_alert?.type === 'PH' && data?.ph != null && (
+                <div className="ph-range">Lectura más reciente: {data.ph.toFixed(1)}</div>
+              )}
             </div>
             <div className="metric-row">
               <div className="metric-label" style={{ fontSize: '0.7rem', letterSpacing: '3px', marginBottom: '0.3rem' }}>TURBIDEZ</div>
-              <div className={data ? getPhClass(data.water_status) : 'ph-value'}>
-                {data?.turbidity != null ? <>{data.turbidity.toFixed(1)} <span style={{ fontSize: '1.2rem' }}>NTU</span></> : '— NTU'}
+              <div className={data ? getPhClass(estadoValido) : 'ph-value'}>
+                {turbMostrada != null ? <>{turbMostrada.toFixed(1)} <span style={{ fontSize: '1.2rem' }}>NTU</span></> : '— NTU'}
               </div>
               <div className="ph-range">Límite: 5 NTU</div>
+              {data?.has_active_alert && data?.active_alert?.type === 'TURBIDITY' && data?.turbidity != null && (
+                <div className="ph-range">Lectura más reciente: {data.turbidity.toFixed(1)} NTU</div>
+              )}
             </div>
             <div className="metric-row" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.75rem', color: '#4a6080' }}>
               ↳ Línea directa SEREMI Valparaíso:

@@ -22,3 +22,10 @@ def test_historial_sector(client):
     response = client.get("/api/habitante/historial?sector=VN-CENTRO")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+def test_historial_sector_invalido(client):
+    r = client.get("/api/habitante/historial?sector=NO-EXISTE")
+    # si decide devolver lista vacía o 404, ambas son válidas; documentamos
+    assert r.status_code in (200, 404)
+    if r.status_code == 200:
+        assert r.json() == []

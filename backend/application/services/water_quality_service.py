@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from domain.entities.alert import Alert
 from domain.entities.sensor_reading import SensorReading
@@ -7,6 +8,8 @@ from domain.enums.water_status import WaterStatus
 from domain.ports.i_alert_repository import IAlertRepository
 from domain.ports.i_notification_port import INotificationPort
 from domain.ports.i_sensor_repository import ISensorRepository
+
+logger = logging.getLogger("simca.water_quality")
 
 PH_MIN = 6.5
 PH_MAX = 8.5
@@ -20,20 +23,28 @@ class WaterQualityService:
         self._alert_repo = alert_repo
 
     def evaluate_reading(self, reading: SensorReading) -> None:
-        if reading.ph < 0 or reading.ph > 14:
-            return
-
         reading.status = self.determine_status(reading.ph, reading.turbidity)
         reading.recorded_at = datetime.now()
         self._sensor_repo.save(reading)
 
         node = self._sensor_repo.get_node(reading.node_id)
-        if node:
-            node.ph = reading.ph
-            node.turbidity = reading.turbidity
-            node.last_ping = datetime.now()
-            node.status = NodeStatus.Online if reading.status == WaterStatus.Safe else NodeStatus.Warning
-            self._sensor_repo.update_node(node)
+        if node is None:
+            logger.warning("Lectura recibida para nodo desconocido: %s", reading.node_id)
+            return
+
+        node.ph = reading.ph
+        node.turbidity = reading.turbidity
+        node.last_ping = datetime.now()
+        if reading.status == WaterStatus.Safe:
+            node.status = NodeStatus.Online
+        elif reading.status == WaterStatus.Warning:
+            node.status = NodeStatus.Warning
+        else:
+            node.status = NodeStatus.Critical
+        # bajamos un poquito la batería cada lectura para que se note algo en la demo
+        if isinstance(node.battery_percent, int) and node.battery_percent > 0:
+            node.battery_percent = max(0, node.battery_percent - 1)
+        self._sensor_repo.update_node(node)
 
         if reading.status == WaterStatus.Safe:
             # Sensor volvió a la normalidad — resolver alertas activas de este nodo

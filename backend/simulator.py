@@ -1,9 +1,12 @@
+import os
 import random
 import time
 import httpx
 from datetime import datetime
 
-API_URL = "http://localhost:8000/api/sensores/lectura"
+# 8001 porque uvicorn por defecto agarra el 8000
+_port = os.getenv("SIMCA_PORT", "8001")
+API_URL = f"http://localhost:{_port}/api/sensores/lectura"
 INTERVAL = 15  # segundos
 
 NODES = [
@@ -38,8 +41,8 @@ def run():
             try:
                 r = httpx.post(API_URL, json=payload, timeout=5)
                 status = r.json().get("status", "?")
-                icon = "CONTAMINADO" if status == "CONTAMINATED" else "PRECAUCION" if status == "WARNING" else "OK"
-                print(f"[{ts}] {payload['node_id']} -> pH {payload['ph']}, turb {payload['turbidity']} NTU -> {status} {icon}")
+                label = "CONTAMINADO" if status == "CONTAMINATED" else "PRECAUCION" if status == "WARNING" else "OK"
+                print(f"[{ts}] {payload['node_id']} -> pH {payload['ph']}, turb {payload['turbidity']} NTU -> {status} {label}")
             except Exception as e:
                 print(f"[{ts}] {payload['node_id']} -> ERROR: {e}")
         time.sleep(INTERVAL)

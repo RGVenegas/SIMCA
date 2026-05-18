@@ -9,6 +9,9 @@ from domain.enums.node_status import NodeStatus
 from infrastructure.database import get_session
 from infrastructure.repositories.sqlite_repository import SQLiteRepository
 
+def _level_str(a):
+    return a.level.value if hasattr(a.level, "value") else str(a.level).upper()
+
 router = APIRouter()
 
 @router.get("/autoridad/dashboard", response_model=DashboardResponse)
@@ -19,19 +22,19 @@ def get_dashboard(session: Session = Depends(get_session)):
     all_alerts = repo.get_all()
 
     online = [n for n in nodes if n.status != NodeStatus.Offline]
-    ph_vals = [n.ph for n in nodes if n.ph is not None]
+    ph_vals = [n.ph for n in nodes if n.ph is not None and n.status != NodeStatus.Offline]
     today = datetime.now().date()
     month = datetime.now().month
 
     return DashboardResponse(
         ph_promedio=round(sum(ph_vals) / len(ph_vals), 2) if ph_vals else 0,
-        turbidez_maxima=max((n.turbidity for n in nodes if n.turbidity), default=0),
+        turbidez_maxima=max((n.turbidity for n in nodes if n.turbidity is not None and n.status != NodeStatus.Offline), default=0),
         nodos_activos=len(online),
         total_nodos=len(nodes),
         nodos_offline=len(nodes) - len(online),
         alertas_hoy=sum(1 for a in all_alerts if a.created_at.date() == today),
-        alertas_criticas=sum(1 for a in active_alerts if a.level == AlertLevel.Critical),
-        alertas_warning=sum(1 for a in active_alerts if a.level == AlertLevel.Warning),
+        alertas_criticas=sum(1 for a in active_alerts if _level_str(a) == "CRITICAL"),
+        alertas_warning=sum(1 for a in active_alerts if _level_str(a) == "WARNING"),
         alertas_este_mes=sum(1 for a in all_alerts if a.created_at.month == month),
         nodes=[NodeResponse(**n.model_dump()) for n in nodes],
         active_alerts=[AlertResponse(**a.model_dump()) for a in active_alerts],

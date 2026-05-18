@@ -9,7 +9,7 @@ def test_lectura_safe_no_genera_alerta(client, session):
     assert response.status_code == 200
     assert response.json()["status"] == "SAFE"
     alertas = session.exec(select(Alert).where(Alert.sector_id == "VN-CENTRO")).all()
-    assert all(not a.is_active for a in alertas) or len(alertas) == 0
+    assert all(not a.is_active for a in alertas), "una lectura SAFE no debería dejar alertas activas"
 
 def test_lectura_critica_genera_alerta(client, session):
     response = client.post("/api/sensores/lectura", json={
@@ -37,4 +37,5 @@ def test_lectura_actualiza_nodo(client, session):
     })
     from domain.entities.iot_node import IoTNode
     node = session.get(IoTNode, "VN-03")
+    assert node is not None
     assert node.ph == 7.1

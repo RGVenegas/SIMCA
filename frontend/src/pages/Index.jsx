@@ -7,7 +7,6 @@ export default function Index() {
     <div className="index-hero">
       <div>
         <div className="index-logo">
-          <span className="drop">💧</span>
           <h1>SIMCA</h1>
         </div>
         <div className="index-subtitle">
@@ -18,12 +17,10 @@ export default function Index() {
 
       <div className="role-cards">
         <div className="role-card" onClick={() => navigate('/habitante/estado')}>
-          <span className="role-icon">🏠</span>
           <h2>HABITANTE</h2>
           <p>Consulta el estado del agua en tu sector y recibe alertas cuando haya riesgo.</p>
         </div>
         <div className="role-card" onClick={() => navigate('/autoridad/dashboard')}>
-          <span className="role-icon">🏛</span>
           <h2>AUTORIDAD SANITARIA</h2>
           <p>Monitorea sensores, gestiona alertas y genera reportes para la comunidad.</p>
         </div>

@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from api.schemas.lectura_schema import LecturaRequest
@@ -7,6 +8,8 @@ from domain.enums.node_status import NodeStatus
 from infrastructure.database import get_session
 from infrastructure.notifications.mock_sms_service import MockSmsService
 from infrastructure.repositories.sqlite_repository import SQLiteRepository
+
+logger = logging.getLogger("simca.sensores")
 
 router = APIRouter()
 
@@ -24,9 +27,13 @@ def recibir_lectura(lectura: LecturaRequest, session: Session = Depends(get_sess
         ph=lectura.ph,
         turbidity=lectura.turbidity,
     )
-    service.evaluate_reading(reading)
+    try:
+        service.evaluate_reading(reading)
+    except Exception:
+        logger.exception("Falló evaluate_reading para node_id=%s", lectura.node_id)
+        raise HTTPException(status_code=400, detail="No se pudo procesar la lectura")
 
-    # Auto-resolve alerts from offline nodes in the same sector
+    # si hay alertas de nodos offline en el mismo sector, las resolvemos solas
     sector_nodes = [n for n in repo.get_all_nodes() if n.sector_id == lectura.sector_id]
     offline_node_ids = {n.id for n in sector_nodes if n.id != lectura.node_id and n.status == NodeStatus.Offline}
     if offline_node_ids:

@@ -21,13 +21,12 @@ export default function Historial() {
   function cambiarSector(s) {
     setSector(s)
     setSearchParams({ sector: s })
-    cargar(s)
   }
 
   useEffect(() => {
     fetchJSON('/sectores').then(setSectores).catch(() => {})
     cargar(sector)
-  }, [])
+  }, [sector])
 
   return (
     <>
@@ -64,7 +63,7 @@ export default function Historial() {
                     <td>{a.type}</td>
                     <td><Badge status={a.level} /></td>
                     <td style={{ maxWidth: '300px' }}>{a.message}</td>
-                    <td><span className={a.level === 'CRITICAL' ? 'tag-critical' : a.level === 'WARNING' ? 'tag-warning' : 'tag-safe'}>{a.trigger_value?.toFixed(2)}</span></td>
+                    <td><span className={a.level === 'CRITICAL' ? 'tag-critical' : a.level === 'WARNING' ? 'tag-warning' : 'tag-safe'}>{typeof a.trigger_value === 'number' ? a.trigger_value.toFixed(2) : '—'}</span></td>
                     <td><span className={a.is_active ? 'badge badge-critical' : 'badge badge-safe'}>{a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
                   </tr>
                 ))}

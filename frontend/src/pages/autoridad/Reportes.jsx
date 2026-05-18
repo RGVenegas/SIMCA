@@ -52,6 +52,7 @@ export default function Reportes() {
     init()
     const id = setInterval(() => {
       fetchJSON('/autoridad/reportes').then(setAlertas)
+      fetchJSON('/autoridad/dashboard').then(d => setNodes(d.nodes ?? []))
     }, 15000)
     return () => clearInterval(id)
   }, [])
@@ -98,7 +99,7 @@ export default function Reportes() {
         <div className="grid grid-4" style={{ marginBottom: '1.5rem' }}>
           <MetricCard label="SECTORES"         value={sectores.length} cls="card-cyan" />
           <MetricCard label="NODOS TOTALES"    value={nodes.length}    cls="card" />
-          <MetricCard label="ALERTAS CRÍTICAS" value={criticas}        cls={criticas > 0 ? 'card-alert' : 'card'} />
+          <MetricCard label="CRÍTICAS HISTÓRICAS" value={criticas}        cls={criticas > 0 ? 'card-alert' : 'card'} />
           <MetricCard label="RESUELTAS"        value={resueltas}       cls="card" />
         </div>
 

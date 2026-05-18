@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import MetricCard from '../../components/MetricCard'
-import Badge from '../../components/Badge'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { fetchJSON, formatDate } from '../../utils/api'
+import { fetchJSON, formatDate, postJSON } from '../../utils/api'
 
 export default function Alertas() {
   const [alertas, setAlertas] = useState(null)
+  const [resolvingId, setResolvingId] = useState(null)
 
   async function cargar() {
     const d = await fetchJSON('/autoridad/alertas')
@@ -14,8 +14,13 @@ export default function Alertas() {
   }
 
   async function resolver(id) {
-    await fetch(`/api/autoridad/alertas/${id}/resolver`, { method: 'POST' })
-    await cargar()
+    setResolvingId(id)
+    try {
+      await postJSON(`/autoridad/alertas/${id}/resolver`)
+      await cargar()
+    } finally {
+      setResolvingId(null)
+    }
   }
 
   function exportCSV() {
@@ -48,7 +53,7 @@ export default function Alertas() {
   const activas   = alertas.filter(a => a.is_active).length
   const criticas  = alertas.filter(a => a.is_active && a.level === 'CRITICAL').length
   const warnings  = alertas.filter(a => a.is_active && a.level === 'WARNING').length
-  const resueltas = alertas.filter(a => !a.is_active).length
+  const resueltas = alertas.filter(a => !a.is_active && a.resolved_at && new Date(a.resolved_at).toDateString() === new Date().toDateString()).length
 
   return (
     <>
@@ -81,7 +86,7 @@ export default function Alertas() {
                   Tipo: {a.type} · SMS: {a.sms_sent ? '✓ enviado' : '—'} · {formatDate(a.created_at)}
                 </div>
               </div>
-              <button className="btn btn-danger btn-sm" onClick={() => resolver(a.id)}>RESOLVER</button>
+              <button className="btn btn-danger btn-sm" onClick={() => resolver(a.id)} disabled={resolvingId === a.id}>{resolvingId === a.id ? 'RESOLVIENDO...' : 'RESOLVER'}</button>
             </div>
           ))}
         </div>
@@ -116,7 +121,7 @@ export default function Alertas() {
                     <td><span className={a.is_active ? 'badge-critical' : 'badge-safe'}>{a.is_active ? 'ACTIVA' : 'RESUELTA'}</span></td>
                     <td>
                       {a.is_active
-                        ? <button className="btn btn-danger btn-sm" onClick={() => resolver(a.id)}>RESOLVER</button>
+                        ? <button className="btn btn-danger btn-sm" onClick={() => resolver(a.id)} disabled={resolvingId === a.id}>{resolvingId === a.id ? 'RESOLVIENDO...' : 'RESOLVER'}</button>
                         : <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.65rem', color: 'var(--text-muted)' }}>{a.resolved_at ? formatDate(a.resolved_at) : '—'}</span>
                       }
                     </td>

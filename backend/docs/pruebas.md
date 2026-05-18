@@ -1,16 +1,19 @@
-# Documentación de Pruebas — SIMCA v3
+# Documentación de Pruebas — SIMCA
 
-## Ejecutar todas las pruebas
+Acá explicamos qué probamos y cómo correr las pruebas del backend.
+
+## Ejecutar todo
 
 ```bash
 cd backend
 pytest tests/ -v
 ```
 
-## Suites de pruebas
+## Suites
 
 ### Unit Tests (`tests/unit/`)
-Prueban la lógica de dominio pura, sin base de datos ni HTTP.
+
+Prueban la lógica pura del dominio, sin base de datos ni HTTP. Son los más rápidos.
 
 | Archivo | Qué prueba |
 |---|---|
@@ -22,11 +25,12 @@ pytest tests/unit/ -v
 ```
 
 ### Integration Tests (`tests/integration/`)
-Prueban los endpoints con base de datos SQLite en memoria aislada.
+
+Prueban los endpoints con una base de datos SQLite en memoria, aislada para cada test.
 
 | Archivo | Qué prueba |
 |---|---|
-| `test_sensores.py` | POST lectura safe/crítica/inválida; actualización de nodo |
+| `test_sensores.py` | POST lectura safe/crítica/inválida; actualización de estado del nodo |
 | `test_habitante.py` | GET sectores; GET estado por sector; GET historial |
 | `test_autoridad.py` | GET dashboard; GET sensores; POST resolver alerta; GET gráficos |
 
@@ -36,12 +40,16 @@ pytest tests/integration/ -v
 
 ## Fixtures (`tests/conftest.py`)
 
-- `session`: SQLite en memoria con seed data (5 sectores, 8 nodos)
-- `client`: `TestClient` de FastAPI con sesión de prueba inyectada
+- `session`: crea una BD SQLite en memoria con seed data (5 sectores, 8 nodos)
+- `client`: `TestClient` de FastAPI con la sesión de prueba inyectada
 
-## Thresholds de calidad del agua
+Decidimos usar SQLite en memoria en vez de mockear el repositorio para que los tests probaran el comportamiento real de la BD sin depender de un archivo en disco.
 
-| Parámetro | Safe | Warning | Contaminated |
+## Umbrales de calidad del agua
+
+Estos son los valores que usa el sistema para clasificar las lecturas:
+
+| Parámetro | Potable | Advertencia | Contaminado |
 |---|---|---|---|
 | pH | 6.5 – 8.5 | — | < 6.5 o > 8.5 |
 | Turbidez | ≤ 3.5 NTU | 3.5 – 5.0 NTU | > 5.0 NTU |

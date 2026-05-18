@@ -16,6 +16,9 @@ class IAlertRepository(ABC):
     def get_alerts_by_sector(self, sector_id: str) -> List[Alert]: ...
 
     @abstractmethod
+    def get_active_alerts_by_sector(self, sector_id: str) -> List[Alert]: ...
+
+    @abstractmethod
     def resolve(self, alert_id: str) -> None: ...
 
     @abstractmethod

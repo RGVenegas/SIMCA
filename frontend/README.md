@@ -1,16 +1,36 @@
-# React + Vite
+# Frontend — SIMCA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interfaz web del sistema, hecha en React + Vite.
 
-Currently, two official plugins are available:
+## Levantar en desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Queda disponible en http://localhost:5173
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+El frontend se conecta al backend en `http://localhost:8000/api`. Si el backend no está corriendo, las páginas cargan pero no muestran datos.
 
-## Expanding the ESLint configuration
+## Estructura
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+src/
+├── components/   ← componentes reutilizables (Navbar, MetricCard, etc.)
+├── pages/
+│   ├── autoridad/   ← Dashboard, Sensores, Alertas, Reportes
+│   └── habitante/   ← Estado, Historial
+├── utils/
+│   └── api.js    ← funciones para llamar al backend
+└── assets/
+    └── simca.css ← estilos globales del sistema
+```
+
+## Build para producción
+
+```bash
+npm run build
+```
+
+Los archivos quedan en `dist/`, listos para servir estáticamente.

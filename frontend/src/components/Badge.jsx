@@ -1,5 +1,5 @@
-import { badgeClass } from '../utils/api'
+import { badgeClass, statusLabel } from '../utils/api'
 
 export default function Badge({ status }) {
-  return <span className={badgeClass(status)}>{status}</span>
+  return <span className={badgeClass(status)}>{statusLabel[status] || status}</span>
 }

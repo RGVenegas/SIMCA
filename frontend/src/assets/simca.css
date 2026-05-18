@@ -1,14 +1,9 @@
 /* ============================================================
-   SIMCA v3 — Design System
+   SIMCA v5 — Design System
    Dark Navy · Cyan-Teal · Orbitron / JetBrains Mono / Rajdhani
    ============================================================ */
 
-/* 1. Google Fonts
-   ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
-
-
-/* 2. CSS Variables
+/* 1. CSS Variables
    ============================================================ */
 :root {
   /* Background palette */

@@ -4,3 +4,4 @@ class NodeStatus(str, Enum):
     Online = "ONLINE"
     Warning = "WARNING"
     Offline = "OFFLINE"
+    Critical = "CRITICAL"

@@ -3,7 +3,7 @@ import Navbar from '../../components/Navbar'
 import MetricCard from '../../components/MetricCard'
 import Badge from '../../components/Badge'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { fetchJSON, formatDate, formatPh } from '../../utils/api'
+import { fetchJSON, formatDate, formatPh, isNodeActive } from '../../utils/api'
 
 export default function Sensores() {
   const [nodos, setNodos] = useState(null)
@@ -28,7 +28,7 @@ export default function Sensores() {
   )
 
   const filtrados = filtro === 'ALL' ? nodos : nodos.filter(n => n.status === filtro)
-  const online  = nodos.filter(n => n.status === 'ONLINE').length
+  const online  = nodos.filter(n => isNodeActive(n)).length
   const warning = nodos.filter(n => n.status === 'WARNING').length
   const offline = nodos.filter(n => n.status === 'OFFLINE').length
   const lowbat  = nodos.filter(n => (n.battery_percent ?? 100) < 15).length
